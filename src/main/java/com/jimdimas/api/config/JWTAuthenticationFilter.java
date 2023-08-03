@@ -11,11 +11,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
+@Component
 @RequiredArgsConstructor
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
@@ -29,13 +31,14 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
         String token,email;
-        if (authHeader.isBlank() || !authHeader.startsWith("Bearer ")){
+        if (authHeader==null || authHeader.isBlank() || !authHeader.startsWith("Bearer ")){
             filterChain.doFilter(request,response);
             return;
         }
         token = authHeader.substring(7);
-        email = jwtService.extractSubject(token);
-        if (!token.isBlank() && SecurityContextHolder.getContext().getAuthentication()==null){
+
+        if (token!=null && !token.isBlank() && SecurityContextHolder.getContext().getAuthentication()==null){
+            email = jwtService.extractSubject(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
             if (jwtService.verifyToken(token)){
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
