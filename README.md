@@ -52,7 +52,7 @@ or uploads , because it contains sensitive application data such as username/pas
 That's why i keep this file included in .gitignore and you need to set it up on your own with your custom values.
 The format of the file should be the following:
 
-_** spring:
+    spring:
         datasource:
             password: {db_password}
             url: jdbc:postgresql://localhost:5432/{db_name}
@@ -76,7 +76,7 @@ _** spring:
                 -----BEGIN PUBLIC KEY-----
                 {your generated public key here}
                 -----END PUBLIC KEY-----
-**_
+
 
 The port specified in the datasource might be different , but the standard one used
 for PostgreSQL is 5432.
