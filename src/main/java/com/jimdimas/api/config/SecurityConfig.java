@@ -28,7 +28,7 @@ public class SecurityConfig {
         httpSecurity
                 .csrf((csrf)->csrf.disable())
                 .authorizeHttpRequests(
-                        (authorizeHttpRequests)-> authorizeHttpRequests.requestMatchers("") //endpoints to be added here
+                        (authorizeHttpRequests)-> authorizeHttpRequests.requestMatchers("/api/v1/auth/**") //endpoints to be added here
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
