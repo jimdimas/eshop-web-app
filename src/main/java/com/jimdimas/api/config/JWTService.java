@@ -57,7 +57,7 @@ public class JWTService {
 
     public Boolean verifyToken(String token) throws JWTVerificationException {
         DecodedJWT decodedJWT = this.decodeToken(token);    //token validity is checked in decodeToken,if its not valid exception is thrown
-        return decodedJWT.getExpiresAt().before(new Date(System.currentTimeMillis()));
+        return decodedJWT.getExpiresAt().after(new Date(System.currentTimeMillis()));
     }
 
     private DecodedJWT decodeToken(String token) throws JWTVerificationException{

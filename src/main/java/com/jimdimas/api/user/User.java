@@ -2,8 +2,12 @@ package com.jimdimas.api.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +19,9 @@ import java.util.List;
 @Entity
 @Table(name = "_user")  //user is a keyword and reserved in postgresql
 @Data                   //lombok keyword that generates getters/setters automatically
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class User implements UserDetails {
     @Id
     @SequenceGenerator(
@@ -28,7 +35,7 @@ public class User implements UserDetails {
     private Integer id;
     private String firstName;
     private String lastName;
-    @JsonIgnore
+    @JsonProperty(access= JsonProperty.Access.WRITE_ONLY)   //field is accessible to write , i.e. post a user but cannot be viewed in a get
     private String password;
     @Column(unique = true)
     private String email;
