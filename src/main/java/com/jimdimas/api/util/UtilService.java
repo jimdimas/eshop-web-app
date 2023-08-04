@@ -1,6 +1,9 @@
 package com.jimdimas.api.util;
 
 import java.util.Base64;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.security.KeyFactory;
@@ -40,6 +43,14 @@ public class UtilService {
                 .replace(" ","");
         byte[] privateKeyToBytes = java.util.Base64.getDecoder().decode(privateKey);
         return (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKeyToBytes));
+    }
+
+    public String objectToJson(Object object) throws JsonProcessingException {
+        if (object == null) {
+            return null;
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.writeValueAsString(object);
     }
 
 }
