@@ -26,9 +26,13 @@ public class UserService {
 
     @PostMapping
     public void addUser(User user){
-        Optional<User> userExists = userRepository.findUserByEmail(user.getEmail());
-        if (userExists.isPresent()){
+        Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
+        Optional<User> userUsernameExists = userRepository.findUserByUsername(user.getUsername());
+        if (userEmailExists.isPresent()){
             throw new IllegalStateException("Email already taken");
+        }
+        if (userUsernameExists.isPresent()){
+            throw new IllegalStateException("Username already taken");
         }
         user.setRole(Role.USER);
         userRepository.save(user);
@@ -51,12 +55,21 @@ public class UserService {
         }
         User updatedUser = userExists.get();
 
-        if (user.getEmail()!=null){
-            Optional<User> userEmailTaken = userRepository.findUserByEmail(user.getEmail());
-            if (userEmailTaken.isPresent()){
+        if (user.getEmail()!=null && !user.getEmail().isBlank()){
+            Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
+            if (userEmailExists.isPresent()){
                 throw new IllegalStateException("Cannot update email to "+user.getEmail()+" , it's already taken.");
             }
             updatedUser.setEmail(user.getEmail());
+        }
+
+        if (user.getUsername()!=null && !user.getLastName().isBlank()){
+            Optional<User> userUsernameExists = userRepository.findUserByUsername(user.getUsername());
+
+            if (userUsernameExists.isPresent()){
+                throw new IllegalStateException("Cannot update username to "+user.getUsername()+" , it's already taken.");
+            }
+            updatedUser.setUsername(user.getUsername());
         }
 
         if (user.getDob()!=null){

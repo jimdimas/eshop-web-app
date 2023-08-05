@@ -13,6 +13,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @ControllerAdvice
 public class ResponseExceptionHandler extends ResponseEntityExceptionHandler {
@@ -35,6 +37,9 @@ public class ResponseExceptionHandler extends ResponseEntityExceptionHandler {
             RuntimeException exception,
             WebRequest request){
         Map<String,String> responseBody = new HashMap<String,String>();
+        Logger logger = Logger.getAnonymousLogger();
+        Level level = Level.SEVERE;
+        logger.log(level,"exception",exception);
         responseBody.put("message", "Something went wrong,try again");
         return handleExceptionInternal(
                 exception,

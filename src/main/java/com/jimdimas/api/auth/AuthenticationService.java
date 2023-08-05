@@ -23,14 +23,19 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
 
     public String register(User user){
-        Optional<User> userExists = userRepository.findUserByEmail(user.getEmail());
-        if (userExists.isPresent()){
+        Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
+        Optional<User> userUsernameExists = userRepository.findUserByUsername(user.getUsername());
+        if (userEmailExists.isPresent()){
             throw new IllegalStateException("Email is used");
+        }
+        if (userUsernameExists.isPresent()){
+            throw new IllegalStateException("Username is used");
         }
         User endUser = User.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .email(user.getUsername())
+                .username(user.getUsername())
+                .email(user.getEmail())
                 .password(passwordEncoder.encode(user.getPassword()))
                 .dob(user.getDob())
                 .role(Role.USER)
