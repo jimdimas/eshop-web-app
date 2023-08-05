@@ -24,6 +24,9 @@ public class UserService {
     @GetMapping
     public Optional<User> getUserById(Integer userId) { return userRepository.findById(userId); }
 
+    @GetMapping
+    public Optional<User> getUserByUsername(String username){  return userRepository.findUserByUsername(username);}
+
     @PostMapping
     public void addUser(User user){
         Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
