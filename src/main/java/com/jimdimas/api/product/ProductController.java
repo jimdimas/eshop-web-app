@@ -1,5 +1,6 @@
 package com.jimdimas.api.product;
 
+import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +31,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public void addProduct(@RequestBody Product product,@RequestParam(name="user") String username){
-        productService.addProduct(product,username);
+    public void addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product){
+        productService.addProduct(product,user.getUsername());
     }
-
 }
