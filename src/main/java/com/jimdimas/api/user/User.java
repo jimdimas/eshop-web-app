@@ -22,6 +22,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(value = {"enabled","authorities","accountNonExpired","credentialsNonExpired","accountNonLocked"})
 public class User implements UserDetails {
     @Id
     @SequenceGenerator(

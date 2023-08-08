@@ -35,7 +35,7 @@ public class Product {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private UUID productId; //We keep this as the public visible id and keep the other id for db primary key hidden
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name="user_id",referencedColumnName = "id")
     private User user;
     private String name;
@@ -44,5 +44,5 @@ public class Product {
     private Integer price;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)   //creation date is set by the server
     private LocalDate creationDate;
-    private Integer capacity;
+    private Integer quantity;
 }

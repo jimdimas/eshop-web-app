@@ -34,4 +34,14 @@ public class ProductController {
     public void addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product){
         productService.addProduct(product,user.getUsername());
     }
+
+    @PutMapping(path="{productId}")
+    public void updateProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId,@RequestBody Product product){
+        productService.updateProduct(user,productId,product);
+    }
+
+    @DeleteMapping(path="{productId}")
+    public void deleteProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId){
+        productService.deleteProduct(user,productId);
+    }
 }

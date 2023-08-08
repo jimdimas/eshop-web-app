@@ -36,7 +36,7 @@ public class ProductService {
                 .user(uploadUser.get())
                 .name(product.getName())
                 .price(product.getPrice())
-                .capacity(product.getCapacity())
+                .quantity(product.getQuantity())
                 .creationDate(LocalDate.now())
                 .description(product.getDescription())
                 .build();
@@ -51,18 +51,59 @@ public class ProductService {
         return productRepository.findProductsByUserUsername(username);
     }
 
-    private void checkProductFields(Product product){
+    private void checkProductFields(Product product) throws IllegalStateException{
         if (product.getPrice()<=0 || product.getPrice()>1000){
             throw new IllegalStateException("Invalid product price");
         }
         if (product.getName()==null || product.getName().isBlank() || product.getName().length()<2){
             throw new IllegalStateException("Invalid product name");
         }
-        if (product.getCapacity()<0 || product.getCapacity()>1000){
+        if (product.getQuantity()<0 || product.getQuantity()>1000){
             throw new IllegalStateException("Invalid product capacity");
         }
         if (product.getDescription().length()>100){
             throw new IllegalStateException("Product description can't be more than 100 characters");
         }
+    }
+
+    public void updateProduct(User user, UUID productId, Product product) {
+        Optional<Product> productExists = productRepository.findProductByPublicId(productId);
+        if (!productExists.isPresent()){
+            throw new IllegalStateException("No product with given id exists");
+        }
+        Product updatedProduct = productExists.get();
+        if (!user.getUsername().equals(updatedProduct.getUser().getUsername())){
+            throw new IllegalStateException("Cannot update given product,it was created by a different user");
+        }
+
+        //If new value is set,update it,else keep old value
+        if (product.getName()!=null && !product.getName().isBlank()){
+            updatedProduct.setName(product.getName());
+        }
+        if (product.getDescription()!=null && !product.getDescription().isBlank()){
+            updatedProduct.setDescription(product.getDescription());
+        }
+        if (product.getPrice()!=null){
+            updatedProduct.setPrice(product.getPrice());
+        }
+        if (product.getQuantity()!=null){
+            updatedProduct.setQuantity(product.getQuantity());
+        }
+
+        checkProductFields(updatedProduct);
+        productRepository.save(updatedProduct);
+    }
+
+    public void deleteProduct(User user, UUID productId) {
+        Optional<Product> productExists = productRepository.findProductByPublicId(productId);
+        if (!productExists.isPresent()){
+            throw new IllegalStateException("No product with given id exists");
+        }
+        Product deletedProduct=productExists.get();
+        if (!deletedProduct.getUser().getUsername().equals(user.getUsername())){
+            throw new IllegalStateException("Cannot delete given product,it was created by a different user");
+        }
+
+        productRepository.delete(deletedProduct);
     }
 }
