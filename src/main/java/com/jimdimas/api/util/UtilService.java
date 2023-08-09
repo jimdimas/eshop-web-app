@@ -1,5 +1,6 @@
 package com.jimdimas.api.util;
 
+import java.security.SecureRandom;
 import java.util.Base64;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,6 +52,16 @@ public class UtilService {
         }
         ObjectMapper mapper = new ObjectMapper();
         return mapper.writeValueAsString(object);
+    }
+
+    public String getSecureRandomToken(Integer length){
+        String allChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        SecureRandom secureRandom = new SecureRandom();
+        StringBuilder tokenBuilder = new StringBuilder();
+        for (int i=0; i<length; i++){
+            tokenBuilder.append(allChars.charAt(secureRandom.nextInt(allChars.length())));
+        }
+        return tokenBuilder.toString();
     }
 
 }

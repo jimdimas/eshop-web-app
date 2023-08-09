@@ -1,14 +1,12 @@
 package com.jimdimas.api.auth;
 
 import com.jimdimas.api.user.User;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,12 +16,19 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user){
+    public ResponseEntity<String> register(@RequestBody User user) throws MessagingException {
         return ResponseEntity.ok(authenticationService.register(user));
     }
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody User user){
         return ResponseEntity.ok(authenticationService.login(user));
+    }
+
+    @GetMapping("/verifyEmail")
+    public ResponseEntity<String> verifyEmail(
+            @RequestParam(name = "email") String email,
+            @RequestParam(name="verificationToken") String token){
+        return ResponseEntity.ok(authenticationService.verifyEmail(email,token));
     }
 }

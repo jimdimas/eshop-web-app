@@ -22,7 +22,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@JsonIgnoreProperties(value = {"enabled","authorities","accountNonExpired","credentialsNonExpired","accountNonLocked"})
+@JsonIgnoreProperties(value = {"enabled","authorities","accountNonExpired","credentialsNonExpired","accountNonLocked"}) //ignoring inherited fields from UserDetails
 public class User implements UserDetails {
     @Id
     @SequenceGenerator(
@@ -38,6 +38,8 @@ public class User implements UserDetails {
     private String lastName;
     @JsonProperty(access= JsonProperty.Access.WRITE_ONLY)   //field is accessible to write , i.e. post a user but cannot be viewed in a get
     private String password;
+    @JsonIgnore
+    private String verificationToken;
     @Column(unique = true)
     private String email;
     @Column(unique = true)
@@ -79,6 +81,9 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        if (this.verificationToken.isEmpty()){
+            return true;
+        }
+        return false;
     }
 }
