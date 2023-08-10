@@ -13,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -40,6 +41,10 @@ public class User implements UserDetails {
     private String password;
     @JsonIgnore
     private String verificationToken;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)  //can provide a password token in i.e. a post request, but cannot view it
+    private String passwordToken;
+    @JsonIgnore
+    private LocalDateTime passwordTokenExpirationDate;
     @Column(unique = true)
     private String email;
     @Column(unique = true)

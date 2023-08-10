@@ -31,4 +31,14 @@ public class AuthenticationController {
             @RequestParam(name="verificationToken") String token){
         return ResponseEntity.ok(authenticationService.verifyEmail(email,token));
     }
+
+    @PostMapping("/forgotPassword")
+    public ResponseEntity<String> forgotPassword(@RequestBody User user) throws MessagingException {    //provided email and username
+        return ResponseEntity.ok(authenticationService.forgotPassword(user));
+    }
+
+    @PostMapping("/resetPassword")
+    public ResponseEntity<String> resetPassword(@RequestBody User user){    //serialize User's password,password token and email fields
+        return ResponseEntity.ok(authenticationService.resetPassword(user));
+    }
 }

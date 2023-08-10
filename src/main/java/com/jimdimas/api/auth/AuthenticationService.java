@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 @Service
 @RequiredArgsConstructor
@@ -78,5 +79,39 @@ public class AuthenticationService {
         user.setVerificationToken("");
         userRepository.save(user);
         return "Email verification was succesfull";
+    }
+
+    public String forgotPassword(User user) throws MessagingException {
+        Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
+        if (!userExists.isPresent()){
+            throw new IllegalStateException("Forgot password process failed");
+        }
+        User existingUser = userExists.get();
+        if (!existingUser.getEmail().equals(user.getEmail())){
+            throw new IllegalStateException("Forgot password process failed");
+        }
+        existingUser.setPasswordToken(utilService.getSecureRandomToken(64));
+        existingUser.setPasswordTokenExpirationDate(LocalDateTime.now().plusHours(1));
+        emailService.sendChangePasswordMail(existingUser.getEmail(),existingUser.getPasswordToken());
+        userRepository.save(existingUser);
+        return "Check your email to change the password";
+    }
+
+    public String resetPassword(User user) {
+        Optional<User> userExists = userRepository.findUserByEmail(user.getEmail());
+        if (!userExists.isPresent()){
+            throw new IllegalStateException("Reset password process failed");
+        }
+        User existingUser = userExists.get();
+        if (!existingUser.getPasswordToken().equals(user.getPasswordToken()) ||
+                !existingUser.getPasswordTokenExpirationDate().isAfter(LocalDateTime.now())){
+            throw new IllegalStateException("Reset password process failed");
+        }
+        existingUser.setPasswordToken("");
+        existingUser.setPasswordTokenExpirationDate(null);
+        existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(existingUser);
+
+        return "Password reset was successful";
     }
 }

@@ -35,4 +35,11 @@ public class ApplicationEmailService {
                 "<p>Click <a href=\""+verificationLink+"\">here</a> to verify your email.</p>";
         sendEmail(recipient,"E-Shop Email Verification",content);
     }
+
+    public void sendChangePasswordMail(String recipient, String passwordToken) throws MessagingException {
+        String changePasswordLink="http://localhost:8080/api/v1/auth/changePassword?email="+recipient+"&passwordToken="+passwordToken;
+        String content = "<p>Hello,this mail was sent by the E-Shop.</p><br>" +
+                "<p>Click <a href=\""+changePasswordLink+"\">here</a> to reset your password.</p>";
+        sendEmail(recipient,"E-Shop Password Reset",content);
+    }
 }
