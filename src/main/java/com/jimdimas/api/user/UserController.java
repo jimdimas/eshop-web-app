@@ -1,9 +1,12 @@
 package com.jimdimas.api.user;
 
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -14,21 +17,41 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<User> getUsers(){
-        return userService.getUsers();
+    public List<User> getUsers(@RequestAttribute(name = "user") User requestingUser){
+        return userService.getUsers(requestingUser);
     }
 
-    @GetMapping(path="{userId}")
-    public Optional<User> getUserById(@PathVariable Integer userId){ return userService.getUserById(userId); }
+    @GetMapping(path="{username}")
+    public Optional<User> getUserById(
+            @RequestAttribute(name = "user") User requestingUser,
+             @PathVariable String username ){
+        return userService.getUserByUsername(requestingUser,username); }
 
     @PostMapping
-    public void addUser(@RequestBody User user){
-        userService.addUser(user);
+    public void addUser(
+            @RequestAttribute(name="user") User requestingUser,
+            @RequestBody User newUser ) throws MessagingException {
+        userService.addUser(requestingUser,newUser);
     }
 
-    @DeleteMapping(path="{userId}")
-    public void deleteUser(@PathVariable Integer userId){ userService.deleteUser(userId); }
+    @PutMapping
+    public void updateUser(
+            @RequestAttribute(name = "user") User requestingUser,
+            @RequestParam(name="username") String username,
+            @RequestBody User updatedUser ){
+        userService.updateUser(requestingUser,username,updatedUser); }
 
-    @PutMapping(path="{userId}")
-    public void updateUser(@PathVariable Integer userId,@RequestBody User user){ userService.updateUser(userId,user); }
+    @PutMapping("/changePassword")
+    public void changePassword(
+            @RequestAttribute(name="user") User user,
+            @RequestBody Map<String,String> passwordSet){
+        userService.changePassword(user,passwordSet);
+    }
+
+    @PutMapping("/changeEmail")
+    public ResponseEntity<String> changeEmail(
+            @RequestAttribute("user") User user,
+            @RequestBody Map<String,String> passwordAndEmail) throws MessagingException {
+        return ResponseEntity.ok(userService.changeEmail(user,passwordAndEmail));
+    }
 }

@@ -25,8 +25,8 @@ public class ProductService {
     }
 
     @PostMapping
-    public void addProduct(Product product,String username) {
-        Optional<User> uploadUser = userService.getUserByUsername(username);
+    public void addProduct(User user,Product product) {
+        Optional<User> uploadUser = userService.getUserByUsername(user, user.getUsername());
         if (!uploadUser.isPresent()){
             throw new IllegalStateException("No user exists with provided id");
         }

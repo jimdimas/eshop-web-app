@@ -1,6 +1,12 @@
 package com.jimdimas.api.user;
 
+import com.jimdimas.api.email.ApplicationEmailService;
+import com.jimdimas.api.util.UtilService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,27 +14,44 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+/* This is the internal user service , used by admins to view and manipulate user data or by an existing user to view,update or delete his profile */
 @Service
 @RequiredArgsConstructor    //lombok annotation to create required constructors automatically
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder;
+    private final UtilService utilService;
+    private final ApplicationEmailService emailService;
 
     @GetMapping
-    public List<User> getUsers(){
+    public List<User> getUsers(User user){
+        if (!user.getRole().equals(Role.ADMIN)){
+            throw new IllegalStateException("Access not allowed");
+        }
+
         return userRepository.findAll();
     }
 
     @GetMapping
-    public Optional<User> getUserById(Integer userId) { return userRepository.findById(userId); }
+    public Optional<User> getUserByUsername(User requestingUser,String username) {
+        if (!requestingUser.getUsername().equals(username) && //a user can only view his profile
+                !requestingUser.getRole().equals(Role.ADMIN)){
+            throw new IllegalStateException("Access not allowed");
+        }
 
-    @GetMapping
-    public Optional<User> getUserByUsername(String username){  return userRepository.findUserByUsername(username);}
+        return userRepository.findUserByUsername(username); }
+
 
     @PostMapping
-    public void addUser(User user){
+    public void addUser(User existingUser,User user) throws MessagingException {    //only admins can post users here,regular users need to use auth service
+        if (!existingUser.getRole().equals(Role.ADMIN)){
+            throw new IllegalStateException("Access not allowed");
+        }
         Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
         Optional<User> userUsernameExists = userRepository.findUserByUsername(user.getUsername());
         if (userEmailExists.isPresent()){
@@ -37,60 +60,71 @@ public class UserService {
         if (userUsernameExists.isPresent()){
             throw new IllegalStateException("Username already taken");
         }
-        user.setRole(Role.USER);
-        userRepository.save(user);
-    }
-
-    @DeleteMapping
-    public void deleteUser(Integer userId){
-        Optional<User> userExists = userRepository.findById(userId);
-        if (!userExists.isPresent()){
-            throw new IllegalStateException("User with id : "+userId.toString()+" does not exist");
-        }
-        userRepository.deleteById(userId);
+        User savedUser = User.builder()
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .dob(user.getDob())
+                .password(passwordEncoder.encode(user.getPassword()))
+                .verificationToken(utilService.getSecureRandomToken(32))
+                .role(Role.USER)
+                .build();
+        emailService.sendVerificationMail(savedUser.getEmail(), savedUser.getVerificationToken());
+        userRepository.save(savedUser);
     }
 
     @PutMapping
-    public void updateUser(Integer userId,User user){
-        Optional<User> userExists = userRepository.findById(userId);
+    public void updateUser(User requestingUser,String username,User user){
+        if (!requestingUser.getUsername().equals(username) && !requestingUser.getRole().equals(Role.ADMIN)){
+            throw new IllegalStateException("Access not allowed");
+        }
+        Optional<User> userExists = userRepository.findUserByUsername(username);
         if (!userExists.isPresent()){
-            throw new IllegalStateException("User with id "+userId.toString()+" does not exist");
+            throw new IllegalStateException("User not found");
         }
-        User updatedUser = userExists.get();
-
-        if (user.getEmail()!=null && !user.getEmail().isBlank()){
-            Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
-            if (userEmailExists.isPresent()){
-                throw new IllegalStateException("Cannot update email to "+user.getEmail()+" , it's already taken.");
-            }
-            updatedUser.setEmail(user.getEmail());
-        }
-
-        if (user.getUsername()!=null && !user.getLastName().isBlank()){
-            Optional<User> userUsernameExists = userRepository.findUserByUsername(user.getUsername());
-
-            if (userUsernameExists.isPresent()){
-                throw new IllegalStateException("Cannot update username to "+user.getUsername()+" , it's already taken.");
-            }
-            updatedUser.setUsername(user.getUsername());
-        }
+        User existingUser = userExists.get();
 
         if (user.getDob()!=null){
-            updatedUser.setDob(user.getDob());
+            existingUser.setDob(user.getDob());
         }
 
         if (user.getFirstName()!=null){
-            updatedUser.setFirstName(user.getFirstName());
+            existingUser.setFirstName(user.getFirstName());
         }
 
         if (user.getLastName()!=null){
-            updatedUser.setLastName(user.getLastName());
+            existingUser.setLastName(user.getLastName());
         }
 
-        if (user.getPassword()!=null) {
-            updatedUser.setPassword(user.getPassword());
+        userRepository.save(existingUser);
+    }
+
+    public void changePassword(User user, Map<String, String> passwordSet) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                user.getUsername(),
+                passwordSet.get("oldPassword")
+        ));
+        User dbUser = userRepository.findUserByUsername(user.getUsername()).get();
+        dbUser.setPassword(passwordEncoder.encode(passwordSet.get("newPassword")));
+        userRepository.save(dbUser);
+    }
+
+    public String changeEmail(User user, Map<String, String> passwordAndEmail) throws MessagingException {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                user.getUsername(),
+                passwordAndEmail.get("password")
+        ));
+        Optional<User> userEmailExists = userRepository.findUserByEmail(passwordAndEmail.get("email"));
+        if (userEmailExists.isPresent()){
+            throw new IllegalStateException("Cannot update email to given one,already taken");
         }
 
-        userRepository.save(updatedUser);
+        User dbUser = userRepository.findUserByUsername(user.getUsername()).get();
+        dbUser.setEmail(passwordAndEmail.get("email"));
+        dbUser.setVerificationToken(utilService.getSecureRandomToken(32));
+        emailService.sendVerificationMail(dbUser.getEmail(), dbUser.getVerificationToken());
+        userRepository.save(dbUser);
+        return "Verify new email to continue";
     }
 }
