@@ -57,4 +57,35 @@ public class ReviewService {
     public Optional<Review> getReviewById(UUID reviewId) {
         return reviewRepository.findByPublicId(reviewId);
     }
+
+    public void updateReview(User user, UUID reviewId, Review review) {
+        Optional<Review> reviewExists = reviewRepository.findByPublicId(reviewId);
+        if (!reviewExists.isPresent()){
+            throw new IllegalStateException("No review with given id exists");
+        }
+        Review updatedReview=reviewExists.get();
+        if (!user.getUsername().equals(updatedReview.getUser().getUsername())){
+            throw new IllegalStateException("No reviews by given user for given product");
+        }
+
+        if (review.getText()!=null && !(review.getText().length()<3)){
+            updatedReview.setText(review.getText());
+        }
+        if (review.getRating()!=null && List.of(1,2,3,4,5).contains(review.getRating())){
+            updatedReview.setRating(review.getRating());
+        }
+        reviewRepository.save(updatedReview);
+    }
+
+    public void deleteReview(User user, UUID reviewId) {
+        Optional<Review> reviewExists = reviewRepository.findByPublicId(reviewId);
+        if (!reviewExists.isPresent()){
+            throw new IllegalStateException("No review with given id exists");
+        }
+        Review deletedReview = reviewExists.get();
+        if (!deletedReview.getUser().getUsername().equals(user.getUsername())){
+            throw new IllegalStateException("No reviews by given user for given product");
+        }
+        reviewRepository.delete(deletedReview);
+    }
 }

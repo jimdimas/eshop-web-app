@@ -35,4 +35,20 @@ public class ReviewController {
             @RequestBody Review review){
         reviewService.addReview(user,productId,review);
     }
+
+    @PutMapping(path="{reviewId}")
+    public void updateReview(
+            @RequestAttribute(name="user") User user,
+            @PathVariable(name = "reviewId") UUID reviewId,
+            @RequestBody Review review){
+        reviewService.updateReview(user,reviewId,review);
+    }
+
+    @DeleteMapping(path="{reviewId}")
+    public void deleteReview(
+            @RequestAttribute(name="user") User user,
+            @PathVariable(name="reviewId") UUID reviewId
+    ){
+        reviewService.deleteReview(user,reviewId);
+    }
 }
