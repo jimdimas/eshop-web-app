@@ -1,5 +1,6 @@
 package com.jimdimas.api.order;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.jimdimas.api.user.User;
@@ -44,6 +45,8 @@ public class Order {
     private List<OrderSingleProduct> cartProducts;
     @Getter(AccessLevel.NONE)
     private Integer totalPrice;
+    @JsonIgnore
+    private String verificationToken;
 
     public Integer getTotalPrice(){
         Integer sum=0;
