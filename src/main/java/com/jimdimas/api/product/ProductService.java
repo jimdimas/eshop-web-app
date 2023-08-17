@@ -25,10 +25,20 @@ public class ProductService {
     }
 
     @PostMapping
-    public void addProduct(User user,Product product) {
+    public void addProduct(User user, Product product, String providedCategory) {
         Optional<User> uploadUser = userService.getUserByUsername(user, user.getUsername());
         if (!uploadUser.isPresent()){
             throw new IllegalStateException("No user exists with provided id");
+        }
+        Category actualCategory=null;
+        for (Category field:Category.values()){
+            if (field.name().equals(providedCategory)){
+                actualCategory=field;
+                break;
+            }
+        }
+        if (actualCategory==null){
+            throw new IllegalStateException("Invalid product category provided");
         }
         checkProductFields(product);
         Product endProduct = Product.builder()  //not setting category enum yet because it can't be serialized by json
@@ -37,6 +47,7 @@ public class ProductService {
                 .name(product.getName())
                 .price(product.getPrice())
                 .quantity(product.getQuantity())
+                .category(actualCategory)
                 .creationDate(LocalDate.now())
                 .description(product.getDescription())
                 .build();

@@ -31,8 +31,8 @@ public class ProductController {
     }
 
     @PostMapping
-    public void addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product){
-        productService.addProduct(user,product);
+    public void addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product,@RequestParam(name="category") String category){
+        productService.addProduct(user,product,category);
     }
 
     @PutMapping(path="{productId}")
