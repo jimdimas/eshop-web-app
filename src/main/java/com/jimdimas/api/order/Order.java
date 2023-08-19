@@ -16,7 +16,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="_order")   //order is a keyword in postgresql
+@Table(name="_order",indexes = {
+        @Index(name="order_id_idx",columnList = "orderId")
+})   //order is a keyword in postgresql
 public class Order {
 
     @Id

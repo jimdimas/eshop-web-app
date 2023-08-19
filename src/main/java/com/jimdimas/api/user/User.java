@@ -18,7 +18,10 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name = "_user")  //user is a keyword and reserved in postgresql
+@Table(name = "_user",indexes = {
+        @Index(name="user_email_idx",columnList = "email"),
+        @Index(name="username_idx",columnList = "username")
+})  //user is a keyword and reserved in postgresql
 @Data                   //lombok keyword that generates getters/setters automatically
 @Builder
 @AllArgsConstructor

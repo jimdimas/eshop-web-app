@@ -1,5 +1,6 @@
 package com.jimdimas.api.review;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.jimdimas.api.product.Product;
@@ -14,6 +15,9 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name="review",indexes = {
+        @Index(name="review_id_idx",columnList = "reviewId")
+})
 public class Review {
 
     @Id
@@ -35,6 +39,7 @@ public class Review {
 
     @ManyToOne
     @JoinColumn(name="product_review",referencedColumnName = "productId")
+    @JsonBackReference
     private Product product;
 
     private Integer rating;

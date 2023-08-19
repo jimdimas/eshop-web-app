@@ -16,7 +16,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(
         name="OrderSingleProduct",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"order_id","product_id"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"order_id","product_id"}),
+        indexes = {
+                @Index(name="order_single_product_idx",columnList = "order_id,product_id")
+        }
 )   //this unique constraint means you can't have an order with the same product referred more than once
 //This class exists as a table , it holds information about which products an order has and their quantity
 public class OrderSingleProduct {
@@ -40,5 +43,4 @@ public class OrderSingleProduct {
     @JoinColumn(name="product_id",referencedColumnName = "productId")
     private Product product;
     private Integer quantity;
-
 }
