@@ -8,8 +8,6 @@ import com.jimdimas.api.user.User;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +45,7 @@ public class OrderService {
                 .orderId(UUID.randomUUID())
                 .user(user)
                 .orderTime(LocalDateTime.now())
-                .orderState(OrderStatus.PENDING)
+                .orderState(OrderState.PENDING)
                 .build();
 
         for (RequestSingleProduct requestSingleProduct : requestSingleProducts){
@@ -55,13 +53,13 @@ public class OrderService {
             if (!productExists.isPresent()){
                 throw new IllegalStateException("A given product does not exist");
             }
-            if (requestSingleProduct.getAmount()<1 || requestSingleProduct.getAmount()>10){
+            if (requestSingleProduct.getQuantity()<1 || requestSingleProduct.getQuantity()>10){
                 throw new IllegalStateException("Invalid count of a single product provided");
             }
             OrderSingleProduct finalProduct = OrderSingleProduct.builder()
                     .order(order)
                     .product(productExists.get())
-                    .quantity(requestSingleProduct.getAmount())
+                    .quantity(requestSingleProduct.getQuantity())
                     .build();
             finalOrderProducts.add(finalProduct);
         }
@@ -85,9 +83,65 @@ public class OrderService {
         if (!order.getUser().getEmail().equals(email) || !order.getVerificationToken().equals(token)){
             throw new IllegalStateException("Order verification failed");
         }
-        order.setOrderState(OrderStatus.VERIFIED);
+        order.setOrderState(OrderState.VERIFIED);
         order.setVerificationToken("");
         orderRepository.save(order);
         return "Order Verification was successful";
+    }
+
+    public Optional<Order> getOrderById(User user, UUID orderId) {
+        Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
+        if (!orderExists.isPresent() || !user.getUsername().equals(orderExists.get().getUser().getUsername())){
+            throw new IllegalStateException("Given user does not have an order with given id");
+        }
+        return Optional.ofNullable(orderExists.get());
+    }
+    /*  This method is transactional as well.We need either all the changes to be committed or none , otherwise we are
+    going to have an inconsistent database.The update order method gets a list of all the cart products that must be kept on the order,
+    along with changes of the quantities of certain products.If a product is not provided, that means we want it to be deleted from the previous
+    order.
+    * */
+    @Transactional
+    public String updateOrder(User user,UUID orderId,List<RequestSingleProduct> requestSingleProducts) throws MessagingException {
+        Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
+        if (!orderExists.isPresent()){
+            throw new IllegalStateException("You have no order with given id.");
+        }
+        Order updatedOrder = orderExists.get();
+        if (!updatedOrder.getUser().getUsername().equals(user.getUsername())){
+            throw new IllegalStateException("You have no order with given id.");
+        }
+        if (updatedOrder.getOrderState().equals(OrderState.PENDING)){
+            throw new IllegalStateException("You need to verify your order first in order to update it.");
+        }
+
+        List<OrderSingleProduct> updatedOrderProducts = new ArrayList<>();
+        for (RequestSingleProduct requestSingleProduct:requestSingleProducts){
+            if (requestSingleProduct.getQuantity()<1 || requestSingleProduct.getQuantity()>10){
+                throw new IllegalStateException("Invalid count of product with id : "+requestSingleProduct.getProductId()+" provided");
+            }
+
+            Optional<OrderSingleProduct> productExistsInOrder = orderSingleProductRepository.findProductInOrder(orderId,requestSingleProduct.getProductId());
+            if (!productExistsInOrder.isPresent()){
+                throw new IllegalStateException("Product with id "+requestSingleProduct.getProductId()+" does not exist in previous order,cannot update");
+            }
+            OrderSingleProduct updatedOrderProduct = productExistsInOrder.get();
+            if (!updatedOrderProduct.getQuantity().equals(requestSingleProduct.getQuantity()))  //if quantity was changed , update it
+            {
+                updatedOrderProduct.setQuantity(requestSingleProduct.getQuantity());
+            }
+            updatedOrderProducts.add(updatedOrderProduct);
+        }
+
+        List<OrderSingleProduct> toBeDeletedOrderProducts = updatedOrder.getCartProducts();
+        toBeDeletedOrderProducts.removeAll(updatedOrderProducts);
+        orderSingleProductRepository.deleteAll(toBeDeletedOrderProducts); //delete all products that were not included in the new received list
+        orderSingleProductRepository.saveAll(updatedOrderProducts);
+        updatedOrder.setCartProducts(updatedOrderProducts);
+        updatedOrder.setVerificationToken(utilService.getSecureRandomToken(32));
+        updatedOrder.setOrderState(OrderState.PENDING);
+        orderRepository.save(updatedOrder);
+        emailService.sendOrderUpdateVerificationMail(user.getEmail(),updatedOrder);
+        return "Verify order update via email to continue";
     }
 }

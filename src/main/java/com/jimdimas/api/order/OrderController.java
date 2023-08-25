@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -36,5 +37,22 @@ public class OrderController {
             @RequestParam(name="orderId") UUID orderId,
             @RequestParam(name="token") String token){
         return ResponseEntity.ok(orderService.verifyOrder(email,orderId,token));
+    }
+
+    @GetMapping(path="{orderId}")
+    public Optional<Order> getOrderById(
+            @RequestAttribute(name="user") User user,
+            @PathVariable UUID orderId
+    ){
+        return orderService.getOrderById(user,orderId);
+    }
+
+    @PutMapping(path="{orderId}")
+    public ResponseEntity<String> updateOrder(
+            @RequestAttribute(name="user") User user,
+            @PathVariable UUID orderId,
+            @RequestBody List<RequestSingleProduct> requestSingleProducts
+    ) throws MessagingException {
+        return ResponseEntity.ok(orderService.updateOrder(user,orderId,requestSingleProducts));
     }
 }

@@ -16,5 +16,5 @@ because a nested Product cannot be initialized automatically by @RequestBody */
 public class RequestSingleProduct {
 
     private UUID productId;
-    private Integer amount;
+    private Integer quantity;
 }

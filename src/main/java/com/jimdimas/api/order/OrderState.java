@@ -1,6 +1,6 @@
 package com.jimdimas.api.order;
 
-public enum OrderStatus {
+public enum OrderState {
     PENDING,
     VERIFIED,
     ACCEPTED,

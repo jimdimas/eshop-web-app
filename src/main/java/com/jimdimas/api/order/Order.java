@@ -41,7 +41,7 @@ public class Order {
     @JoinColumn(name="username",referencedColumnName = "username")
     private User user;
     private LocalDateTime orderTime;
-    private OrderStatus orderState;
+    private OrderState orderState;
     @OneToMany(mappedBy = "order",fetch = FetchType.EAGER,cascade = CascadeType.REMOVE)
     @JsonManagedReference   //annotation used to stop circular reference to OrderSingleProduct
     private List<OrderSingleProduct> cartProducts;
