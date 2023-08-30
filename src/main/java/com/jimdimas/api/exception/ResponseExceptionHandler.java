@@ -1,51 +1,53 @@
 package com.jimdimas.api.exception;
 
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @ControllerAdvice
 public class ResponseExceptionHandler extends ResponseEntityExceptionHandler {
 
+    @ExceptionHandler(value = BadCredentialsException.class)
+    protected ResponseEntity<Object> badCredentialsHandler(
+            RuntimeException exception,WebRequest request
+    ) {
+        return baseExceptionHandler(exception, request, "Invalid credentials provided", HttpStatus.BAD_REQUEST);
+    }
     @ExceptionHandler(value=IllegalStateException.class)
     protected ResponseEntity<Object> illegalStateHandler(
             RuntimeException exception, WebRequest request
             ){
-        Map<String,String> responseBody = new HashMap<String,String>();
-        responseBody.put("message", exception.getMessage());
-        return handleExceptionInternal(
-                exception,
-                responseBody,
-                new HttpHeaders(),
-                HttpStatus.BAD_REQUEST,request);
+        return baseExceptionHandler(exception, request, exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(value=Exception.class)
-    protected ResponseEntity<Object> jwtVerificationHandler(
+    protected ResponseEntity<Object> generalHandler(
             RuntimeException exception,
             WebRequest request){
+        return baseExceptionHandler(exception,request,"Something went wrong,please try again.",HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private ResponseEntity<Object> baseExceptionHandler(
+            RuntimeException exception,
+            WebRequest request,
+            String message,
+            HttpStatus status){
         Map<String,String> responseBody = new HashMap<String,String>();
-        Logger logger = Logger.getAnonymousLogger();
-        Level level = Level.SEVERE;
-        logger.log(level,"exception",exception);
-        responseBody.put("message", "Something went wrong,try again");
+        responseBody.put("message", message);
         return handleExceptionInternal(
                 exception,
                 responseBody,
                 new HttpHeaders(),
-                HttpStatus.INTERNAL_SERVER_ERROR,
+                status,
                 request
         );
     }
