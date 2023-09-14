@@ -71,6 +71,8 @@ public class AuthenticationService {
         String accessToken = jwtService.generateAccessToken(checkUserEnabled);
         Cookie accessCookie = new Cookie("accessToken",accessToken);
         Cookie refreshCookie = new Cookie("refreshToken", tokenService.getRefreshToken(checkUserEnabled));
+        accessCookie.setPath("/");
+        refreshCookie.setPath("/");
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
         return accessToken;

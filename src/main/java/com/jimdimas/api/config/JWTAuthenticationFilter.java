@@ -1,7 +1,9 @@
 package com.jimdimas.api.config;
 
+import com.jimdimas.api.token.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -23,32 +26,51 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
     private final JWTService jwtService;
     private final UserDetailsService userDetailsService;
+    private final TokenService tokenService;
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
-        String token,username;
-        if (authHeader==null || authHeader.isBlank() || !authHeader.startsWith("Bearer ")){
-            filterChain.doFilter(request,response);
-            return;
-        }
-        token = authHeader.substring(7);
+        if (request.getCookies()!=null) {
+            Optional<Cookie> accessCookieExists = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("accessToken")).findFirst();
+            Optional<Cookie> refreshCookieExists = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("refreshToken")).findFirst();
 
-        if (token!=null && !token.isBlank() && SecurityContextHolder.getContext().getAuthentication()==null){
-            username = jwtService.extractSubject(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (jwtService.verifyToken(token) && userDetails.isEnabled()){
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                request.setAttribute("user",userDetails);
+            if (accessCookieExists.isPresent()) {
+                String accessToken = accessCookieExists.get().getValue();
+                if (accessToken != null && !accessToken.isBlank() && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    String username = jwtService.extractSubject(accessToken);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    if (jwtService.verifyToken(accessToken) && userDetails.isEnabled()) {
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                        request.setAttribute("user", userDetails);
+                    }
+                }
+            } else if (refreshCookieExists.isPresent()) {
+                String refreshToken = refreshCookieExists.get().getValue();
+                if (refreshToken != null && !refreshToken.isBlank() && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = tokenService.verifyByRefreshToken(refreshToken);
+                    if (userDetails.isEnabled()) {
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                        request.setAttribute("user", userDetails);
+                        Cookie accessCookie = new Cookie("accessToken", jwtService.generateAccessToken(userDetails));
+                        accessCookie.setPath("/");
+                        response.addCookie(accessCookie);
+                    }
+                }
             }
         }
         filterChain.doFilter(request,response);

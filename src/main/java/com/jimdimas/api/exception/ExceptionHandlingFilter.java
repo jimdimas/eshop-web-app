@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Component
 @RequiredArgsConstructor
@@ -32,6 +34,8 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } catch (RuntimeException e) {
+            Logger logger = Logger.getAnonymousLogger();
+            logger.log(Level.SEVERE,"An exception was thrown.",e);
             CustomErrorResponse errorResponse = new CustomErrorResponse();
             errorResponse.setMessage("Something went wrong.");  //more logic to be added here
             response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
