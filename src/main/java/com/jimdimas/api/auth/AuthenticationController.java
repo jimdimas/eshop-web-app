@@ -2,6 +2,7 @@ package com.jimdimas.api.auth;
 
 import com.jimdimas.api.user.User;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +22,9 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user){
-        return ResponseEntity.ok(authenticationService.login(user));
+    public ResponseEntity<String> login(@RequestBody User user,
+                                        HttpServletResponse response){
+        return ResponseEntity.ok(authenticationService.login(user,response));
     }
 
     @GetMapping("/verifyEmail")

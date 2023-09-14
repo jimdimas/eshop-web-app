@@ -6,6 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.jimdimas.api.user.User;
 import com.jimdimas.api.util.UtilService;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -43,16 +44,14 @@ public class JWTService {
         return decodedJWT.getSubject();
     }
 
-    public String generateToken(UserDetails userDetails) throws JWTCreationException {
-        Integer twoHours = 1000 * 60 * 60 * 2;
-        Algorithm algorithm = Algorithm.RSA256(this.publicKey, this.privateKey);
-        return JWT.create()
-                .withIssuer("auth0")
-                .withSubject(userDetails.getUsername())
-                .withIssuedAt(new Date(System.currentTimeMillis()))
-                .withExpiresAt(new Date(System.currentTimeMillis() + twoHours))
-                .sign(algorithm);
+    public String generateAccessToken(UserDetails userDetails) throws JWTCreationException {
+        Integer oneHour = 1000 * 60 * 60 ;
+        return generateToken(userDetails,oneHour);
+    }
 
+    public String generateRefreshToken(UserDetails user) {
+        Integer oneDay = 1000*60*60*24;
+        return generateToken(user,oneDay);
     }
 
     public Boolean verifyToken(String token) throws JWTVerificationException {
@@ -68,5 +67,15 @@ public class JWTService {
                 .withIssuer("auth0")
                 .build();
         return jwtVerifier.verify(token);
+    }
+
+    private String generateToken(UserDetails userDetails,Integer duration){
+        Algorithm algorithm = Algorithm.RSA256(this.publicKey, this.privateKey);
+        return JWT.create()
+                .withIssuer("auth0")
+                .withSubject(userDetails.getUsername())
+                .withIssuedAt(new Date(System.currentTimeMillis()))
+                .withExpiresAt(new Date(System.currentTimeMillis() + duration))
+                .sign(algorithm);
     }
 }

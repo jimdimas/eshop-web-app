@@ -2,11 +2,14 @@ package com.jimdimas.api.auth;
 
 import com.jimdimas.api.config.JWTService;
 import com.jimdimas.api.email.ApplicationEmailService;
+import com.jimdimas.api.token.TokenService;
 import com.jimdimas.api.user.Role;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserRepository;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,6 +30,7 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final UtilService utilService;
     private final ApplicationEmailService emailService;
+    private final TokenService tokenService;
 
     public String register(User user) throws MessagingException {
         Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
@@ -52,7 +56,7 @@ public class AuthenticationService {
         return "Verify email to end register process";
     }
 
-    public String login(User user){
+    public String login(User user, HttpServletResponse response){
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getUsername(),
@@ -64,7 +68,12 @@ public class AuthenticationService {
         if (!checkUserEnabled.isEnabled()){ //If user has not verified his email , he is denied access
             throw new IllegalStateException("Something went wrong,try again");
         }
-        return jwtService.generateToken(user);
+        String accessToken = jwtService.generateAccessToken(checkUserEnabled);
+        Cookie accessCookie = new Cookie("accessToken",accessToken);
+        Cookie refreshCookie = new Cookie("refreshToken", tokenService.getRefreshToken(checkUserEnabled));
+        response.addCookie(accessCookie);
+        response.addCookie(refreshCookie);
+        return accessToken;
     }
 
     public String verifyEmail(String email, String token) {
