@@ -41,19 +41,23 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 String accessToken = accessCookieExists.get().getValue();
                 if (accessToken != null && !accessToken.isBlank() && SecurityContextHolder.getContext().getAuthentication() == null) {
                     String username = jwtService.extractSubject(accessToken);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    if (jwtService.verifyToken(accessToken) && userDetails.isEnabled()) {
-                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authToken);
-                        request.setAttribute("user", userDetails);
+                    if (username!=null) {
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                        if (jwtService.verifyToken(accessToken) && userDetails.isEnabled()) {
+                            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+                            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            SecurityContextHolder.getContext().setAuthentication(authToken);
+                            request.setAttribute("user", userDetails);
+                            filterChain.doFilter(request, response);
+                        }
                     }
                 }
-            } else if (refreshCookieExists.isPresent()) {
+            }
+            if (refreshCookieExists.isPresent()) {
                 String refreshToken = refreshCookieExists.get().getValue();
                 if (refreshToken != null && !refreshToken.isBlank() && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = tokenService.verifyByRefreshToken(refreshToken);
@@ -69,6 +73,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                         Cookie accessCookie = new Cookie("accessToken", jwtService.generateAccessToken(userDetails));
                         accessCookie.setPath("/");
                         response.addCookie(accessCookie);
+                        filterChain.doFilter(request,response);
                     }
                 }
             }

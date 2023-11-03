@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.util.UtilService;
@@ -39,13 +40,18 @@ public class JWTService {
         }
     }
 
-    public String extractSubject(String token) throws JWTVerificationException{
-        DecodedJWT decodedJWT = this.decodeToken(token);
-        return decodedJWT.getSubject();
+    public String extractSubject(String token) throws JWTVerificationException, TokenExpiredException {
+        try {
+            DecodedJWT decodedJWT = this.decodeToken(token);
+            return decodedJWT.getSubject();
+        }
+        catch (Exception e){
+            return null;
+        }
     }
 
     public String generateAccessToken(UserDetails userDetails) throws JWTCreationException {
-        Integer oneHour = 1000 * 60 * 60 ;
+        Integer oneHour = 1000 * 60*60 ;
         return generateToken(userDetails,oneHour);
     }
 
@@ -54,9 +60,13 @@ public class JWTService {
         return generateToken(user,oneDay);
     }
 
-    public Boolean verifyToken(String token) throws JWTVerificationException {
-        DecodedJWT decodedJWT = this.decodeToken(token);    //token validity is checked in decodeToken,if its not valid exception is thrown
-        return decodedJWT.getExpiresAt().after(new Date(System.currentTimeMillis()));
+    public Boolean verifyToken(String token) throws JWTVerificationException,TokenExpiredException {
+        try {
+            DecodedJWT decodedJWT = this.decodeToken(token);    //token validity is checked in decodeToken,if its not valid exception is thrown
+            return decodedJWT.getExpiresAt().after(new Date(System.currentTimeMillis()));
+        } catch (Exception e){
+            return false;
+        }
     }
 
     private DecodedJWT decodeToken(String token) throws JWTVerificationException{

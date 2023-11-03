@@ -3,6 +3,7 @@ package com.jimdimas.api.token;
 import com.jimdimas.api.config.JWTService;
 import com.jimdimas.api.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -38,16 +39,20 @@ public class TokenService {
         }
 
         String username= jwtService.extractSubject(refreshToken);
-        Optional<Token> tokenExists = tokenRepository.findByRefreshToken(passwordEncoder.encode(refreshToken));
+        Optional<Token> tokenExists = tokenRepository.findByUsername(username);
+
         if (!tokenExists.isPresent()){
             throw new IllegalStateException("Unauthorized to access this route");
         }
 
         Token token = tokenExists.get();
-        if (!username.equals(token.getUser().getUsername())){
+
+        if (!BCrypt.checkpw(refreshToken,token.getRefreshToken()))
+        {
             tokenRepository.delete(token);
             throw new IllegalStateException("Unauthorized to access this route");
         }
+
         return token.getUser();
     }
 }
