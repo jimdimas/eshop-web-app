@@ -18,6 +18,23 @@ import java.util.logging.Logger;
 @ControllerAdvice
 public class ResponseExceptionHandler extends ResponseEntityExceptionHandler {
 
+    @ExceptionHandler(value=CustomException.class)
+    protected ResponseEntity<Object> customExceptionHandler(
+            CustomException exception,
+            WebRequest request
+    ){
+        Logger logger = Logger.getAnonymousLogger();
+        logger.log(Level.SEVERE,"An exception was thrown.",exception);
+        Map<String,String> responseBody = new HashMap<String,String>();
+        responseBody.put("message", exception.getMessage());
+        return handleExceptionInternal(
+                exception,
+                responseBody,
+                new HttpHeaders(),
+                exception.getStatusCode(),
+                request
+        );
+    }
     @ExceptionHandler(value = BadCredentialsException.class)
     protected ResponseEntity<Object> badCredentialsHandler(
             RuntimeException exception,WebRequest request
