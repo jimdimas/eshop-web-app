@@ -1,5 +1,8 @@
 package com.jimdimas.api.product;
 
+import com.jimdimas.api.exception.BadRequestException;
+import com.jimdimas.api.exception.ConflictException;
+import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +28,10 @@ public class ProductService {
     }
 
     @PostMapping
-    public void addProduct(User user, Product product, String providedCategory) {
+    public void addProduct(User user, Product product, String providedCategory) throws NotFoundException, BadRequestException {
         Optional<User> uploadUser = userService.getUserByUsername(user, user.getUsername());
         if (!uploadUser.isPresent()){
-            throw new IllegalStateException("No user exists with provided id");
+            throw new NotFoundException("No user with username: "+user.getUsername()+" exists.");
         }
         Category actualCategory=null;
         for (Category field:Category.values()){
@@ -38,7 +41,7 @@ public class ProductService {
             }
         }
         if (actualCategory==null){
-            throw new IllegalStateException("Invalid product category provided");
+            throw new BadRequestException("Invalid product category provided");
         }
         checkProductFields(product);
         Product endProduct = Product.builder()  //not setting category enum yet because it can't be serialized by json
@@ -62,29 +65,29 @@ public class ProductService {
         return productRepository.findProductsByUserUsername(username);
     }
 
-    private void checkProductFields(Product product) throws IllegalStateException{
+    private void checkProductFields(Product product) throws BadRequestException {
         if (product.getPrice()<=0 || product.getPrice()>1000){
-            throw new IllegalStateException("Invalid product price");
+            throw new BadRequestException("Invalid product price");
         }
         if (product.getName()==null || product.getName().isBlank() || product.getName().length()<2){
-            throw new IllegalStateException("Invalid product name");
+            throw new BadRequestException("Invalid product name");
         }
         if (product.getQuantity()<0 || product.getQuantity()>1000){
-            throw new IllegalStateException("Invalid product capacity");
+            throw new BadRequestException("Invalid product capacity");
         }
         if (product.getDescription().length()>100){
-            throw new IllegalStateException("Product description can't be more than 100 characters");
+            throw new BadRequestException("Product description can't be more than 100 characters");
         }
     }
 
-    public void updateProduct(User user, UUID productId, Product product) {
+    public void updateProduct(User user, UUID productId, Product product) throws BadRequestException, ConflictException, NotFoundException {
         Optional<Product> productExists = productRepository.findProductByPublicId(productId);
         if (!productExists.isPresent()){
-            throw new IllegalStateException("No product with given id exists");
+            throw new NotFoundException("No product with given id exists");
         }
         Product updatedProduct = productExists.get();
         if (!user.getUsername().equals(updatedProduct.getUser().getUsername())){
-            throw new IllegalStateException("Cannot update given product,it was created by a different user");
+            throw new ConflictException("Cannot update given product,it was created by a different user");
         }
 
         //If new value is set,update it,else keep old value
@@ -105,14 +108,14 @@ public class ProductService {
         productRepository.save(updatedProduct);
     }
 
-    public void deleteProduct(User user, UUID productId) {
+    public void deleteProduct(User user, UUID productId) throws NotFoundException, ConflictException {
         Optional<Product> productExists = productRepository.findProductByPublicId(productId);
         if (!productExists.isPresent()){
-            throw new IllegalStateException("No product with given id exists");
+            throw new NotFoundException("No product with given id exists");
         }
         Product deletedProduct=productExists.get();
         if (!deletedProduct.getUser().getUsername().equals(user.getUsername())){
-            throw new IllegalStateException("Cannot delete given product,it was created by a different user");
+            throw new ConflictException("Cannot delete given product,it was created by a different user");
         }
 
         productRepository.delete(deletedProduct);

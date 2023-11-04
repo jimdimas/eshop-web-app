@@ -1,5 +1,8 @@
 package com.jimdimas.api.product;
 
+import com.jimdimas.api.exception.BadRequestException;
+import com.jimdimas.api.exception.ConflictException;
+import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +18,6 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
-    private final UserService userService;
 
     @GetMapping()
     public Optional<List<Product>> getAllProducts(@RequestParam(name="user",required = false) Optional<String> username){
@@ -31,17 +33,19 @@ public class ProductController {
     }
 
     @PostMapping
-    public void addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product,@RequestParam(name="category") String category){
+    public void addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product,@RequestParam(name="category") String category)
+            throws NotFoundException, BadRequestException {
         productService.addProduct(user,product,category);
     }
 
     @PutMapping(path="{productId}")
-    public void updateProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId,@RequestBody Product product){
+    public void updateProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId,@RequestBody Product product)
+            throws ConflictException, BadRequestException, NotFoundException {
         productService.updateProduct(user,productId,product);
     }
 
     @DeleteMapping(path="{productId}")
-    public void deleteProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId){
+    public void deleteProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId) throws ConflictException, NotFoundException {
         productService.deleteProduct(user,productId);
     }
 }
