@@ -1,6 +1,9 @@
 package com.jimdimas.api.user;
 
 import com.jimdimas.api.email.ApplicationEmailService;
+import com.jimdimas.api.exception.ConflictException;
+import com.jimdimas.api.exception.NotFoundException;
+import com.jimdimas.api.exception.UnauthorizedException;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -29,36 +32,36 @@ public class UserService {
     private final ApplicationEmailService emailService;
 
     @GetMapping
-    public List<User> getUsers(User user){
+    public List<User> getUsers(User user) throws UnauthorizedException {
         if (!user.getRole().equals(Role.ADMIN)){
-            throw new IllegalStateException("Access not allowed");
+            throw new UnauthorizedException("Access not allowed");
         }
 
         return userRepository.findAll();
     }
 
     @GetMapping
-    public Optional<User> getUserByUsername(User requestingUser,String username) {
+    public Optional<User> getUserByUsername(User requestingUser,String username) throws UnauthorizedException {
         if (!requestingUser.getUsername().equals(username) && //a user can only view his profile
                 !requestingUser.getRole().equals(Role.ADMIN)){
-            throw new IllegalStateException("Access not allowed");
+            throw new UnauthorizedException("Access not allowed");
         }
 
         return userRepository.findUserByUsername(username); }
 
 
     @PostMapping
-    public void addUser(User existingUser,User user) throws MessagingException {    //only admins can post users here,regular users need to use auth service
+    public void addUser(User existingUser,User user) throws MessagingException, UnauthorizedException, ConflictException {    //only admins can post users here,regular users need to use auth service
         if (!existingUser.getRole().equals(Role.ADMIN)){
-            throw new IllegalStateException("Access not allowed");
+            throw new UnauthorizedException("Access not allowed");
         }
         Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
         Optional<User> userUsernameExists = userRepository.findUserByUsername(user.getUsername());
         if (userEmailExists.isPresent()){
-            throw new IllegalStateException("Email already taken");
+            throw new ConflictException("Email already taken");
         }
         if (userUsernameExists.isPresent()){
-            throw new IllegalStateException("Username already taken");
+            throw new ConflictException("Username already taken");
         }
         User savedUser = User.builder()
                 .username(user.getUsername())
@@ -75,13 +78,13 @@ public class UserService {
     }
 
     @PutMapping
-    public void updateUser(User requestingUser,String username,User user){
+    public void updateUser(User requestingUser,String username,User user) throws UnauthorizedException, NotFoundException {
         if (!requestingUser.getUsername().equals(username) && !requestingUser.getRole().equals(Role.ADMIN)){
-            throw new IllegalStateException("Access not allowed");
+            throw new UnauthorizedException("Access not allowed");
         }
         Optional<User> userExists = userRepository.findUserByUsername(username);
         if (!userExists.isPresent()){
-            throw new IllegalStateException("User not found");
+            throw new NotFoundException("User not found");
         }
         User existingUser = userExists.get();
 
@@ -110,14 +113,14 @@ public class UserService {
         userRepository.save(dbUser);
     }
 
-    public String changeEmail(User user, Map<String, String> passwordAndEmail) throws MessagingException {
+    public String changeEmail(User user, Map<String, String> passwordAndEmail) throws MessagingException, ConflictException {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 user.getUsername(),
                 passwordAndEmail.get("password")
         ));
         Optional<User> userEmailExists = userRepository.findUserByEmail(passwordAndEmail.get("email"));
         if (userEmailExists.isPresent()){
-            throw new IllegalStateException("Cannot update email to given one,already taken");
+            throw new ConflictException("Cannot update email to given one,already taken");
         }
 
         User dbUser = userRepository.findUserByUsername(user.getUsername()).get();

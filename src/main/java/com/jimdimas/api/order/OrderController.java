@@ -1,5 +1,7 @@
 package com.jimdimas.api.order;
 
+import com.jimdimas.api.exception.BadRequestException;
+import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.user.User;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,7 @@ public class OrderController {
     public void addOrder(
             @RequestAttribute(name="user") User user,
             @RequestBody List<RequestSingleProduct> requestSingleProducts //check RequestSingleProduct class for explanation
-    ) throws MessagingException {
+    ) throws MessagingException, NotFoundException, BadRequestException {
         orderService.addOrder(user, requestSingleProducts);
     }
 
@@ -35,7 +37,7 @@ public class OrderController {
     public ResponseEntity<String> verifyOrder(
             @RequestParam(name = "email") String email,
             @RequestParam(name="orderId") UUID orderId,
-            @RequestParam(name="token") String token){
+            @RequestParam(name="token") String token) throws NotFoundException, BadRequestException {
         return ResponseEntity.ok(orderService.verifyOrder(email,orderId,token));
     }
 
@@ -43,7 +45,7 @@ public class OrderController {
     public Optional<Order> getOrderById(
             @RequestAttribute(name="user") User user,
             @PathVariable UUID orderId
-    ){
+    ) throws NotFoundException {
         return orderService.getOrderById(user,orderId);
     }
 
@@ -52,7 +54,7 @@ public class OrderController {
             @RequestAttribute(name="user") User user,
             @PathVariable UUID orderId,
             @RequestBody List<RequestSingleProduct> requestSingleProducts
-    ) throws MessagingException {
+    ) throws MessagingException, NotFoundException, BadRequestException {
         return ResponseEntity.ok(orderService.updateOrder(user,orderId,requestSingleProducts));
     }
 }

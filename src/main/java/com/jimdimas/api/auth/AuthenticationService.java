@@ -2,6 +2,9 @@ package com.jimdimas.api.auth;
 
 import com.jimdimas.api.config.JWTService;
 import com.jimdimas.api.email.ApplicationEmailService;
+import com.jimdimas.api.exception.BadRequestException;
+import com.jimdimas.api.exception.ConflictException;
+import com.jimdimas.api.exception.UnauthorizedException;
 import com.jimdimas.api.token.TokenService;
 import com.jimdimas.api.user.Role;
 import com.jimdimas.api.user.User;
@@ -32,14 +35,14 @@ public class AuthenticationService {
     private final ApplicationEmailService emailService;
     private final TokenService tokenService;
 
-    public String register(User user) throws MessagingException {
+    public String register(User user) throws MessagingException, ConflictException {
         Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
         Optional<User> userUsernameExists = userRepository.findUserByUsername(user.getUsername());
         if (userEmailExists.isPresent()){
-            throw new IllegalStateException("Email is used");
+            throw new ConflictException("Email is used");
         }
         if (userUsernameExists.isPresent()){
-            throw new IllegalStateException("Username is used");
+            throw new ConflictException("Username is used");
         }
         User endUser = User.builder()
                 .firstName(user.getFirstName())
@@ -56,11 +59,11 @@ public class AuthenticationService {
         return "Verify email to end register process";
     }
 
-    public String login(User user, HttpServletResponse response){
+    public String login(User user, HttpServletResponse response) throws UnauthorizedException {
         Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
         User checkUserEnabled = userExists.get();
         if (!checkUserEnabled.isEnabled()){ //If user has not verified his email , he is denied access
-            throw new IllegalStateException("Verify email to login.");
+            throw new UnauthorizedException("Verify email to login.");
         }
 
         authenticationManager.authenticate(
@@ -80,28 +83,28 @@ public class AuthenticationService {
         return accessToken;
     }
 
-    public String verifyEmail(String email, String token) {
+    public String verifyEmail(String email, String token) throws BadRequestException {
         Optional<User> userExists = userRepository.findUserByEmail(email);
         if (!userExists.isPresent()){
-            throw new IllegalStateException("Failed email verification");
+            throw new BadRequestException("Failed email verification");
         }
         User user = userExists.get();
         if (!user.getVerificationToken().equals(token)){
-            throw new IllegalStateException("Failed email verification");
+            throw new BadRequestException("Failed email verification");
         }
         user.setVerificationToken("");
         userRepository.save(user);
         return "Email verification was succesfull";
     }
 
-    public String forgotPassword(User user) throws MessagingException {
+    public String forgotPassword(User user) throws MessagingException, BadRequestException {
         Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
         if (!userExists.isPresent()){
-            throw new IllegalStateException("Forgot password process failed");
+            throw new BadRequestException("Forgot password process failed");
         }
         User existingUser = userExists.get();
         if (!existingUser.getEmail().equals(user.getEmail())){
-            throw new IllegalStateException("Forgot password process failed");
+            throw new BadRequestException("Forgot password process failed");
         }
         existingUser.setPasswordToken(utilService.getSecureRandomToken(64));
         existingUser.setPasswordTokenExpirationDate(LocalDateTime.now().plusHours(1));
@@ -110,15 +113,15 @@ public class AuthenticationService {
         return "Check your email to change the password";
     }
 
-    public String resetPassword(User user) {
+    public String resetPassword(User user) throws BadRequestException {
         Optional<User> userExists = userRepository.findUserByEmail(user.getEmail());
         if (!userExists.isPresent()){
-            throw new IllegalStateException("Reset password process failed");
+            throw new BadRequestException("Reset password process failed");
         }
         User existingUser = userExists.get();
         if (!existingUser.getPasswordToken().equals(user.getPasswordToken()) ||
                 !existingUser.getPasswordTokenExpirationDate().isAfter(LocalDateTime.now())){
-            throw new IllegalStateException("Reset password process failed");
+            throw new BadRequestException("Reset password process failed");
         }
         existingUser.setPasswordToken("");
         existingUser.setPasswordTokenExpirationDate(null);

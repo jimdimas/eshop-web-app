@@ -1,6 +1,7 @@
 package com.jimdimas.api.token;
 
 import com.jimdimas.api.config.JWTService;
+import com.jimdimas.api.exception.UnauthorizedException;
 import com.jimdimas.api.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -33,16 +34,16 @@ public class TokenService {
         return refreshToken;
     }
 
-    public User verifyByRefreshToken(String refreshToken){
+    public User verifyByRefreshToken(String refreshToken) throws UnauthorizedException {
         if (!jwtService.verifyToken(refreshToken)){
-            throw new IllegalStateException("Unauthorized to access this route");
+            throw new UnauthorizedException("Unauthorized to access this route");
         }
 
         String username= jwtService.extractSubject(refreshToken);
         Optional<Token> tokenExists = tokenRepository.findByUsername(username);
 
         if (!tokenExists.isPresent()){
-            throw new IllegalStateException("Unauthorized to access this route");
+            throw new UnauthorizedException("Unauthorized to access this route");
         }
 
         Token token = tokenExists.get();
@@ -50,7 +51,7 @@ public class TokenService {
         if (!BCrypt.checkpw(refreshToken,token.getRefreshToken()))
         {
             tokenRepository.delete(token);
-            throw new IllegalStateException("Unauthorized to access this route");
+            throw new UnauthorizedException("Unauthorized to access this route");
         }
 
         return token.getUser();

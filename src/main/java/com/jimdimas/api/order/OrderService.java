@@ -1,6 +1,8 @@
 package com.jimdimas.api.order;
 
 import com.jimdimas.api.email.ApplicationEmailService;
+import com.jimdimas.api.exception.BadRequestException;
+import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.product.Product;
 import com.jimdimas.api.product.ProductService;
 import com.jimdimas.api.user.Role;
@@ -39,7 +41,7 @@ public class OrderService {
     * on a certain order.In that case , if we had more than one references of a product,an order would be
     * saved in the database but it's products wouldn't.@Transactional ensures that either all products and order are saved or none of them if something fails.*/
     @Transactional
-    public void addOrder(User user, List<RequestSingleProduct> requestSingleProducts) throws MessagingException {
+    public void addOrder(User user, List<RequestSingleProduct> requestSingleProducts) throws MessagingException, NotFoundException, BadRequestException {
         List<OrderSingleProduct> finalOrderProducts = new ArrayList<>();
         Order order = Order.builder()
                 .orderId(UUID.randomUUID())
@@ -51,10 +53,10 @@ public class OrderService {
         for (RequestSingleProduct requestSingleProduct : requestSingleProducts){
             Optional<Product> productExists = productService.getProductById(requestSingleProduct.getProductId());
             if (!productExists.isPresent()){
-                throw new IllegalStateException("A given product does not exist");
+                throw new NotFoundException("A given product does not exist");
             }
             if (requestSingleProduct.getQuantity()<1 || requestSingleProduct.getQuantity()>10){
-                throw new IllegalStateException("Invalid count of a single product provided");
+                throw new BadRequestException("Invalid count of a single product provided");
             }
             OrderSingleProduct finalProduct = OrderSingleProduct.builder()
                     .order(order)
@@ -74,14 +76,14 @@ public class OrderService {
         }
     }
 
-    public String verifyOrder(String email, UUID orderId, String token) {
+    public String verifyOrder(String email, UUID orderId, String token) throws NotFoundException, BadRequestException {
         Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
         if (!orderExists.isPresent()){
-            throw new IllegalStateException("Order verification failed");
+            throw new NotFoundException("Order verification failed");
         }
         Order order = orderExists.get();
         if (!order.getUser().getEmail().equals(email) || !order.getVerificationToken().equals(token)){
-            throw new IllegalStateException("Order verification failed");
+            throw new BadRequestException("Order verification failed");
         }
         order.setOrderState(OrderState.VERIFIED);
         order.setVerificationToken("");
@@ -89,10 +91,10 @@ public class OrderService {
         return "Order Verification was successful";
     }
 
-    public Optional<Order> getOrderById(User user, UUID orderId) {
+    public Optional<Order> getOrderById(User user, UUID orderId) throws NotFoundException {
         Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
         if (!orderExists.isPresent() || !user.getUsername().equals(orderExists.get().getUser().getUsername())){
-            throw new IllegalStateException("Given user does not have an order with given id");
+            throw new NotFoundException("Given user does not have an order with given id");
         }
         return Optional.ofNullable(orderExists.get());
     }
@@ -102,28 +104,28 @@ public class OrderService {
     order.
     * */
     @Transactional
-    public String updateOrder(User user,UUID orderId,List<RequestSingleProduct> requestSingleProducts) throws MessagingException {
+    public String updateOrder(User user,UUID orderId,List<RequestSingleProduct> requestSingleProducts) throws MessagingException, NotFoundException, BadRequestException {
         Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
         if (!orderExists.isPresent()){
-            throw new IllegalStateException("You have no order with given id.");
+            throw new NotFoundException("You have no order with given id.");
         }
         Order updatedOrder = orderExists.get();
         if (!updatedOrder.getUser().getUsername().equals(user.getUsername())){
-            throw new IllegalStateException("You have no order with given id.");
+            throw new NotFoundException("You have no order with given id.");
         }
         if (updatedOrder.getOrderState().equals(OrderState.PENDING)){
-            throw new IllegalStateException("You need to verify your order first in order to update it.");
+            throw new BadRequestException("You need to verify your order first in order to update it.");
         }
 
         List<OrderSingleProduct> updatedOrderProducts = new ArrayList<>();
         for (RequestSingleProduct requestSingleProduct:requestSingleProducts){
             if (requestSingleProduct.getQuantity()<1 || requestSingleProduct.getQuantity()>10){
-                throw new IllegalStateException("Invalid count of product with id : "+requestSingleProduct.getProductId()+" provided");
+                throw new BadRequestException("Invalid count of product with id : "+requestSingleProduct.getProductId()+" provided");
             }
 
             Optional<OrderSingleProduct> productExistsInOrder = orderSingleProductRepository.findProductInOrder(orderId,requestSingleProduct.getProductId());
             if (!productExistsInOrder.isPresent()){
-                throw new IllegalStateException("Product with id "+requestSingleProduct.getProductId()+" does not exist in previous order,cannot update");
+                throw new BadRequestException("Product with id "+requestSingleProduct.getProductId()+" does not exist in previous order,cannot update");
             }
             OrderSingleProduct updatedOrderProduct = productExistsInOrder.get();
             if (!updatedOrderProduct.getQuantity().equals(requestSingleProduct.getQuantity()))  //if quantity was changed , update it

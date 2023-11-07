@@ -1,5 +1,8 @@
 package com.jimdimas.api.user;
 
+import com.jimdimas.api.exception.ConflictException;
+import com.jimdimas.api.exception.NotFoundException;
+import com.jimdimas.api.exception.UnauthorizedException;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,20 +20,20 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<User> getUsers(@RequestAttribute(name = "user") User requestingUser){
+    public List<User> getUsers(@RequestAttribute(name = "user") User requestingUser) throws UnauthorizedException {
         return userService.getUsers(requestingUser);
     }
 
     @GetMapping(path="{username}")
     public Optional<User> getUserById(
             @RequestAttribute(name = "user") User requestingUser,
-             @PathVariable String username ){
+             @PathVariable String username ) throws UnauthorizedException {
         return userService.getUserByUsername(requestingUser,username); }
 
     @PostMapping
     public void addUser(
             @RequestAttribute(name="user") User requestingUser,
-            @RequestBody User newUser ) throws MessagingException {
+            @RequestBody User newUser ) throws MessagingException, ConflictException, UnauthorizedException {
         userService.addUser(requestingUser,newUser);
     }
 
@@ -38,7 +41,7 @@ public class UserController {
     public void updateUser(
             @RequestAttribute(name = "user") User requestingUser,
             @RequestParam(name="username") String username,
-            @RequestBody User updatedUser ){
+            @RequestBody User updatedUser ) throws UnauthorizedException, NotFoundException {
         userService.updateUser(requestingUser,username,updatedUser); }
 
     @PutMapping("/changePassword")
@@ -51,7 +54,7 @@ public class UserController {
     @PutMapping("/changeEmail")
     public ResponseEntity<String> changeEmail(
             @RequestAttribute("user") User user,
-            @RequestBody Map<String,String> passwordAndEmail) throws MessagingException {
+            @RequestBody Map<String,String> passwordAndEmail) throws MessagingException, ConflictException {
         return ResponseEntity.ok(userService.changeEmail(user,passwordAndEmail));
     }
 }
