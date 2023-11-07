@@ -3,6 +3,7 @@ package com.jimdimas.api.product;
 import com.jimdimas.api.exception.BadRequestException;
 import com.jimdimas.api.exception.ConflictException;
 import com.jimdimas.api.exception.NotFoundException;
+import com.jimdimas.api.exception.UnauthorizedException;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +24,12 @@ public class ProductService {
     private final UserService userService;
 
     @GetMapping
-    public List<Product> getAllProducts(){
-        return productRepository.findAll();
+    public List<ProductProjection> getAllProducts(){
+        return productRepository.findAllProjectedBy();
     }
 
     @PostMapping
-    public void addProduct(User user, Product product, String providedCategory) throws NotFoundException, BadRequestException {
+    public void addProduct(User user, Product product, String providedCategory) throws NotFoundException, BadRequestException, UnauthorizedException {
         Optional<User> uploadUser = userService.getUserByUsername(user, user.getUsername());
         if (!uploadUser.isPresent()){
             throw new NotFoundException("No user with username: "+user.getUsername()+" exists.");
@@ -61,8 +62,8 @@ public class ProductService {
     public Optional<Product> getProductById(UUID productId) {  return productRepository.findProductByPublicId(productId); }
 
 
-    public Optional<List<Product>> getUserProducts(String username) {
-        return productRepository.findProductsByUserUsername(username);
+    public Optional<List<ProductProjection>> getUserProducts(String username) {
+        return productRepository.findProductsProjectionByUserUsername(username);
     }
 
     private void checkProductFields(Product product) throws BadRequestException {

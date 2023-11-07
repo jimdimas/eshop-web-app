@@ -3,6 +3,7 @@ package com.jimdimas.api.product;
 import com.jimdimas.api.exception.BadRequestException;
 import com.jimdimas.api.exception.ConflictException;
 import com.jimdimas.api.exception.NotFoundException;
+import com.jimdimas.api.exception.UnauthorizedException;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping()
-    public Optional<List<Product>> getAllProducts(@RequestParam(name="user",required = false) Optional<String> username){
+    public Optional<List<ProductProjection>> getAllProducts(@RequestParam(name="user",required = false) Optional<String> username){
         if (username.isPresent()){
             return productService.getUserProducts(username.get());
         }
@@ -34,7 +35,7 @@ public class ProductController {
 
     @PostMapping
     public void addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product,@RequestParam(name="category") String category)
-            throws NotFoundException, BadRequestException {
+            throws NotFoundException, BadRequestException, UnauthorizedException {
         productService.addProduct(user,product,category);
     }
 
