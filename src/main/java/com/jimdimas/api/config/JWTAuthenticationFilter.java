@@ -33,10 +33,11 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        System.out.println("filter");
         if (request.getCookies()!=null) {
             Optional<Cookie> accessCookieExists = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("accessToken")).findFirst();
             Optional<Cookie> refreshCookieExists = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("refreshToken")).findFirst();
-
+            Boolean accessTokenValidated=false;
             if (accessCookieExists.isPresent()) {
                 String accessToken = accessCookieExists.get().getValue();
                 if (accessToken != null && !accessToken.isBlank() && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -52,12 +53,12 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                             SecurityContextHolder.getContext().setAuthentication(authToken);
                             request.setAttribute("user", userDetails);
-                            filterChain.doFilter(request, response);
+                            accessTokenValidated=true;
                         }
                     }
                 }
             }
-            if (refreshCookieExists.isPresent()) {
+            if (refreshCookieExists.isPresent() && !accessTokenValidated) {
                 String refreshToken = refreshCookieExists.get().getValue();
                 if (refreshToken != null && !refreshToken.isBlank() && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = tokenService.verifyByRefreshToken(refreshToken);
@@ -73,7 +74,6 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                         Cookie accessCookie = new Cookie("accessToken", jwtService.generateAccessToken(userDetails));
                         accessCookie.setPath("/");
                         response.addCookie(accessCookie);
-                        filterChain.doFilter(request,response);
                     }
                 }
             }

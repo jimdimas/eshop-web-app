@@ -57,17 +57,19 @@ public class AuthenticationService {
     }
 
     public String login(User user, HttpServletResponse response){
+        Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
+        User checkUserEnabled = userExists.get();
+        if (!checkUserEnabled.isEnabled()){ //If user has not verified his email , he is denied access
+            throw new IllegalStateException("Verify email to login.");
+        }
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getUsername(),
                         user.getPassword()
                 )
         );
-        Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
-        User checkUserEnabled = userExists.get();
-        if (!checkUserEnabled.isEnabled()){ //If user has not verified his email , he is denied access
-            throw new IllegalStateException("Something went wrong,try again");
-        }
+
         String accessToken = jwtService.generateAccessToken(checkUserEnabled);
         Cookie accessCookie = new Cookie("accessToken",accessToken);
         Cookie refreshCookie = new Cookie("refreshToken", tokenService.getRefreshToken(checkUserEnabled));
