@@ -6,7 +6,9 @@ import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.exception.UnauthorizedException;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserService;
+import com.jimdimas.api.util.JsonResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,19 +36,19 @@ public class ProductController {
     }
 
     @PostMapping
-    public void addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product,@RequestParam(name="category") String category)
+    public ResponseEntity<JsonResponse> addProduct(@RequestAttribute(name="user") User user, @RequestBody Product product, @RequestParam(name="category") String category)
             throws NotFoundException, BadRequestException, UnauthorizedException {
-        productService.addProduct(user,product,category);
+        return ResponseEntity.ok(productService.addProduct(user,product,category));
     }
 
     @PutMapping(path="{productId}")
-    public void updateProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId,@RequestBody Product product)
+    public ResponseEntity<JsonResponse> updateProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId,@RequestBody Product product)
             throws ConflictException, BadRequestException, NotFoundException {
-        productService.updateProduct(user,productId,product);
+        return ResponseEntity.ok(productService.updateProduct(user,productId,product));
     }
 
     @DeleteMapping(path="{productId}")
-    public void deleteProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId) throws ConflictException, NotFoundException {
-        productService.deleteProduct(user,productId);
+    public ResponseEntity<JsonResponse> deleteProduct(@RequestAttribute(name="user") User user,@PathVariable UUID productId) throws ConflictException, NotFoundException {
+        return ResponseEntity.ok(productService.deleteProduct(user,productId));
     }
 }

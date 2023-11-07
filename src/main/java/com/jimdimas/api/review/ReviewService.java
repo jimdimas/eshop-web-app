@@ -6,6 +6,7 @@ import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.product.Product;
 import com.jimdimas.api.product.ProductService;
 import com.jimdimas.api.user.User;
+import com.jimdimas.api.util.JsonResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +28,7 @@ public class ReviewService {
         return reviewRepository.findByProductId(productId);
     }
 
-    public void addReview(User user,UUID productId,Review review) throws ConflictException, NotFoundException, BadRequestException {
+    public JsonResponse addReview(User user, UUID productId, Review review) throws ConflictException, NotFoundException, BadRequestException {
         Optional<Review> reviewExists = reviewRepository.findUserReviewOnProduct(user.getUsername(),productId);
         if (reviewExists.isPresent()){
             throw new ConflictException("Review on product for given user already exists");
@@ -45,6 +46,7 @@ public class ReviewService {
                 .product(productExists.get())
                 .build();
         reviewRepository.save(endReview);
+        return JsonResponse.builder().message("Review on product with id: "+productId.toString()+" has been uploaded successfully.").build();
     }
 
     private void checkReviewFields(Review review) throws BadRequestException {
@@ -61,7 +63,7 @@ public class ReviewService {
         return reviewRepository.findByPublicId(reviewId);
     }
 
-    public void updateReview(User user, UUID reviewId, Review review) throws NotFoundException {
+    public JsonResponse updateReview(User user, UUID reviewId, Review review) throws NotFoundException {
         Optional<Review> reviewExists = reviewRepository.findByPublicId(reviewId);
         if (!reviewExists.isPresent()){
             throw new NotFoundException("No review with given id exists");
@@ -78,9 +80,10 @@ public class ReviewService {
             updatedReview.setRating(review.getRating());
         }
         reviewRepository.save(updatedReview);
+        return JsonResponse.builder().message("Your review with id: "+reviewId.toString()+" has been updated successfully.").build();
     }
 
-    public void deleteReview(User user, UUID reviewId) throws NotFoundException {
+    public JsonResponse deleteReview(User user, UUID reviewId) throws NotFoundException {
         Optional<Review> reviewExists = reviewRepository.findByPublicId(reviewId);
         if (!reviewExists.isPresent()){
             throw new NotFoundException("No review with given id exists");
@@ -90,5 +93,6 @@ public class ReviewService {
             throw new NotFoundException("No reviews by given user for given product");
         }
         reviewRepository.delete(deletedReview);
+        return JsonResponse.builder().message("Your review with id: "+reviewId.toString()+" has been deleted successfully.").build();
     }
 }

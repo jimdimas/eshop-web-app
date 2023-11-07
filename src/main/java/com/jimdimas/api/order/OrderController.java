@@ -3,6 +3,7 @@ package com.jimdimas.api.order;
 import com.jimdimas.api.exception.BadRequestException;
 import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.user.User;
+import com.jimdimas.api.util.JsonResponse;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,15 +27,15 @@ public class OrderController {
     }
 
     @PostMapping
-    public void addOrder(
+    public ResponseEntity<JsonResponse> addOrder(
             @RequestAttribute(name="user") User user,
             @RequestBody List<RequestSingleProduct> requestSingleProducts //check RequestSingleProduct class for explanation
     ) throws MessagingException, NotFoundException, BadRequestException {
-        orderService.addOrder(user, requestSingleProducts);
+        return ResponseEntity.ok(orderService.addOrder(user, requestSingleProducts));
     }
 
     @GetMapping("/verifyOrder")
-    public ResponseEntity<String> verifyOrder(
+    public ResponseEntity<JsonResponse> verifyOrder(
             @RequestParam(name = "email") String email,
             @RequestParam(name="orderId") UUID orderId,
             @RequestParam(name="token") String token) throws NotFoundException, BadRequestException {
@@ -50,7 +51,7 @@ public class OrderController {
     }
 
     @PutMapping(path="{orderId}")
-    public ResponseEntity<String> updateOrder(
+    public ResponseEntity<JsonResponse> updateOrder(
             @RequestAttribute(name="user") User user,
             @PathVariable UUID orderId,
             @RequestBody List<RequestSingleProduct> requestSingleProducts

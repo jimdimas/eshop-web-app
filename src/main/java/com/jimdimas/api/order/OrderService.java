@@ -7,6 +7,7 @@ import com.jimdimas.api.product.Product;
 import com.jimdimas.api.product.ProductService;
 import com.jimdimas.api.user.Role;
 import com.jimdimas.api.user.User;
+import com.jimdimas.api.util.JsonResponse;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,7 @@ public class OrderService {
     * on a certain order.In that case , if we had more than one references of a product,an order would be
     * saved in the database but it's products wouldn't.@Transactional ensures that either all products and order are saved or none of them if something fails.*/
     @Transactional
-    public void addOrder(User user, List<RequestSingleProduct> requestSingleProducts) throws MessagingException, NotFoundException, BadRequestException {
+    public JsonResponse addOrder(User user, List<RequestSingleProduct> requestSingleProducts) throws MessagingException, NotFoundException, BadRequestException {
         List<OrderSingleProduct> finalOrderProducts = new ArrayList<>();
         Order order = Order.builder()
                 .orderId(UUID.randomUUID())
@@ -74,9 +75,10 @@ public class OrderService {
         if (orderRepository.findByPublicId(order.getOrderId()).isPresent()){    //check if order was created to send email,otherwise transaction failed
             emailService.sendOrderVerificationMail(user.getEmail(), order);
         }
+        return JsonResponse.builder().message("Order has been created , please verify by email to continue.").build();
     }
 
-    public String verifyOrder(String email, UUID orderId, String token) throws NotFoundException, BadRequestException {
+    public JsonResponse verifyOrder(String email, UUID orderId, String token) throws NotFoundException, BadRequestException {
         Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
         if (!orderExists.isPresent()){
             throw new NotFoundException("Order verification failed");
@@ -88,7 +90,7 @@ public class OrderService {
         order.setOrderState(OrderState.VERIFIED);
         order.setVerificationToken("");
         orderRepository.save(order);
-        return "Order Verification was successful";
+        return JsonResponse.builder().message("Order verification was successful").build();
     }
 
     public Optional<Order> getOrderById(User user, UUID orderId) throws NotFoundException {
@@ -104,7 +106,7 @@ public class OrderService {
     order.
     * */
     @Transactional
-    public String updateOrder(User user,UUID orderId,List<RequestSingleProduct> requestSingleProducts) throws MessagingException, NotFoundException, BadRequestException {
+    public JsonResponse updateOrder(User user,UUID orderId,List<RequestSingleProduct> requestSingleProducts) throws MessagingException, NotFoundException, BadRequestException {
         Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
         if (!orderExists.isPresent()){
             throw new NotFoundException("You have no order with given id.");
@@ -144,6 +146,6 @@ public class OrderService {
         updatedOrder.setOrderState(OrderState.PENDING);
         orderRepository.save(updatedOrder);
         emailService.sendOrderUpdateVerificationMail(user.getEmail(),updatedOrder);
-        return "Verify order update via email to continue";
+        return JsonResponse.builder().message("Order with id : "+orderId.toString()+" has been updated successfully,please check your email for verification.").build();
     }
 }

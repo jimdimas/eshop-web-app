@@ -9,6 +9,7 @@ import com.jimdimas.api.token.TokenService;
 import com.jimdimas.api.user.Role;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserRepository;
+import com.jimdimas.api.util.JsonResponse;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
@@ -35,7 +36,7 @@ public class AuthenticationService {
     private final ApplicationEmailService emailService;
     private final TokenService tokenService;
 
-    public String register(User user) throws MessagingException, ConflictException {
+    public JsonResponse register(User user) throws MessagingException, ConflictException {
         Optional<User> userEmailExists = userRepository.findUserByEmail(user.getEmail());
         Optional<User> userUsernameExists = userRepository.findUserByUsername(user.getUsername());
         if (userEmailExists.isPresent()){
@@ -56,10 +57,10 @@ public class AuthenticationService {
                 .build();
         emailService.sendVerificationMail(endUser.getEmail(), endUser.getVerificationToken());
         userRepository.save(endUser);
-        return "Verify email to end register process";
+        return JsonResponse.builder().message("Verify email to end register process").build();
     }
 
-    public String login(User user, HttpServletResponse response) throws UnauthorizedException {
+    public JsonResponse login(User user, HttpServletResponse response) throws UnauthorizedException {
         Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
         User checkUserEnabled = userExists.get();
         if (!checkUserEnabled.isEnabled()){ //If user has not verified his email , he is denied access
@@ -80,10 +81,10 @@ public class AuthenticationService {
         refreshCookie.setPath("/");
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
-        return accessToken;
+        return JsonResponse.builder().message("Successful login").build();
     }
 
-    public String verifyEmail(String email, String token) throws BadRequestException {
+    public JsonResponse verifyEmail(String email, String token) throws BadRequestException {
         Optional<User> userExists = userRepository.findUserByEmail(email);
         if (!userExists.isPresent()){
             throw new BadRequestException("Failed email verification");
@@ -94,10 +95,10 @@ public class AuthenticationService {
         }
         user.setVerificationToken("");
         userRepository.save(user);
-        return "Email verification was succesfull";
+        return JsonResponse.builder().message("Email verification was succesfull").build();
     }
 
-    public String forgotPassword(User user) throws MessagingException, BadRequestException {
+    public JsonResponse forgotPassword(User user) throws MessagingException, BadRequestException {
         Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
         if (!userExists.isPresent()){
             throw new BadRequestException("Forgot password process failed");
@@ -110,10 +111,10 @@ public class AuthenticationService {
         existingUser.setPasswordTokenExpirationDate(LocalDateTime.now().plusHours(1));
         emailService.sendChangePasswordMail(existingUser.getEmail(),existingUser.getPasswordToken());
         userRepository.save(existingUser);
-        return "Check your email to change the password";
+        return JsonResponse.builder().message("Check your email to change the password").build();
     }
 
-    public String resetPassword(User user) throws BadRequestException {
+    public JsonResponse resetPassword(User user) throws BadRequestException {
         Optional<User> userExists = userRepository.findUserByEmail(user.getEmail());
         if (!userExists.isPresent()){
             throw new BadRequestException("Reset password process failed");
@@ -128,6 +129,6 @@ public class AuthenticationService {
         existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(existingUser);
 
-        return "Password reset was successful";
+        return JsonResponse.builder().message("Password reset was successful").build();
     }
 }

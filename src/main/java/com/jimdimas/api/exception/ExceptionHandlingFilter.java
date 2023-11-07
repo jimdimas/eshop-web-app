@@ -1,6 +1,6 @@
 package com.jimdimas.api.exception;
 
-import com.jimdimas.api.util.CustomErrorResponse;
+import com.jimdimas.api.util.JsonResponse;
 import com.jimdimas.api.util.UtilService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -36,8 +36,8 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
         } catch (RuntimeException e) {
             Logger logger = Logger.getAnonymousLogger();
             logger.log(Level.SEVERE,"An exception was thrown.",e);
-            CustomErrorResponse errorResponse = new CustomErrorResponse();
-            errorResponse.setMessage("Something went wrong.");  //more logic to be added here
+            JsonResponse errorResponse = new JsonResponse();
+            errorResponse.setMessage("Something went wrong,please try again.");  //more logic to be added here
             response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             response.getWriter().write(utilService.objectToJson(errorResponse));
         }

@@ -4,7 +4,9 @@ import com.jimdimas.api.exception.BadRequestException;
 import com.jimdimas.api.exception.ConflictException;
 import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.user.User;
+import com.jimdimas.api.util.JsonResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,26 +34,26 @@ public class ReviewController {
     }
 
     @PostMapping
-    public void addReview(
+    public ResponseEntity<JsonResponse> addReview(
             @RequestAttribute(name="user") User user,
             @RequestParam(name="productId") UUID productId,
             @RequestBody Review review) throws ConflictException, NotFoundException, BadRequestException {
-        reviewService.addReview(user,productId,review);
+        return ResponseEntity.ok(reviewService.addReview(user,productId,review));
     }
 
     @PutMapping(path="{reviewId}")
-    public void updateReview(
+    public ResponseEntity<JsonResponse> updateReview(
             @RequestAttribute(name="user") User user,
             @PathVariable(name = "reviewId") UUID reviewId,
             @RequestBody Review review) throws NotFoundException {
-        reviewService.updateReview(user,reviewId,review);
+        return ResponseEntity.ok(reviewService.updateReview(user,reviewId,review));
     }
 
     @DeleteMapping(path="{reviewId}")
-    public void deleteReview(
+    public ResponseEntity<JsonResponse> deleteReview(
             @RequestAttribute(name="user") User user,
             @PathVariable(name="reviewId") UUID reviewId
     ) throws NotFoundException {
-        reviewService.deleteReview(user,reviewId);
+        return ResponseEntity.ok(reviewService.deleteReview(user,reviewId));
     }
 }

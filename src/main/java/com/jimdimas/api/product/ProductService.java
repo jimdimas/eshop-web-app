@@ -6,6 +6,7 @@ import com.jimdimas.api.exception.NotFoundException;
 import com.jimdimas.api.exception.UnauthorizedException;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.user.UserService;
+import com.jimdimas.api.util.JsonResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +30,7 @@ public class ProductService {
     }
 
     @PostMapping
-    public void addProduct(User user, Product product, String providedCategory) throws NotFoundException, BadRequestException, UnauthorizedException {
+    public JsonResponse addProduct(User user, Product product, String providedCategory) throws NotFoundException, BadRequestException, UnauthorizedException {
         Optional<User> uploadUser = userService.getUserByUsername(user, user.getUsername());
         if (!uploadUser.isPresent()){
             throw new NotFoundException("No user with username: "+user.getUsername()+" exists.");
@@ -57,6 +58,7 @@ public class ProductService {
                 .build();
 
         productRepository.save(endProduct);
+        return JsonResponse.builder().message("Product created successfully.").build();
     }
 
     public Optional<Product> getProductById(UUID productId) {  return productRepository.findProductByPublicId(productId); }
@@ -81,7 +83,7 @@ public class ProductService {
         }
     }
 
-    public void updateProduct(User user, UUID productId, Product product) throws BadRequestException, ConflictException, NotFoundException {
+    public JsonResponse updateProduct(User user, UUID productId, Product product) throws BadRequestException, ConflictException, NotFoundException {
         Optional<Product> productExists = productRepository.findProductByPublicId(productId);
         if (!productExists.isPresent()){
             throw new NotFoundException("No product with given id exists");
@@ -107,9 +109,10 @@ public class ProductService {
 
         checkProductFields(updatedProduct);
         productRepository.save(updatedProduct);
+        return JsonResponse.builder().message("Product with id : "+productId.toString()+" updated successfully.").build();
     }
 
-    public void deleteProduct(User user, UUID productId) throws NotFoundException, ConflictException {
+    public JsonResponse deleteProduct(User user, UUID productId) throws NotFoundException, ConflictException {
         Optional<Product> productExists = productRepository.findProductByPublicId(productId);
         if (!productExists.isPresent()){
             throw new NotFoundException("No product with given id exists");
@@ -120,5 +123,6 @@ public class ProductService {
         }
 
         productRepository.delete(deletedProduct);
+        return JsonResponse.builder().message("Product with id : "+productId.toString()+" deleted successfully.").build();
     }
 }
