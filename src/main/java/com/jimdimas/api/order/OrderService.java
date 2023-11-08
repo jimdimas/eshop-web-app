@@ -11,6 +11,7 @@ import com.jimdimas.api.util.JsonResponse;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -147,5 +148,21 @@ public class OrderService {
         orderRepository.save(updatedOrder);
         emailService.sendOrderUpdateVerificationMail(user.getEmail(),updatedOrder);
         return JsonResponse.builder().message("Order with id : "+orderId.toString()+" has been updated successfully,please check your email for verification.").build();
+    }
+
+    @Transactional
+    public JsonResponse deleteOrder(User user,UUID orderId) throws NotFoundException, BadRequestException {
+        Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
+        if (!orderExists.isPresent()){
+            throw new NotFoundException("You have no order with id : "+orderId.toString()+" exists");
+        }
+        Order order = orderExists.get();
+        if (!order.getUser().getUsername().equals(user.getUsername())){
+            throw new NotFoundException("You have no order with id : "+orderId.toString()+" exists");
+        }
+
+        orderSingleProductRepository.deleteAll(order.getCartProducts());
+        orderRepository.delete(order);
+        return JsonResponse.builder().message("Order with id : "+orderId.toString()+" has been deleted successfully").build();
     }
 }

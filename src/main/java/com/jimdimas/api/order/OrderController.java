@@ -58,4 +58,12 @@ public class OrderController {
     ) throws MessagingException, NotFoundException, BadRequestException {
         return ResponseEntity.ok(orderService.updateOrder(user,orderId,requestSingleProducts));
     }
+
+    @DeleteMapping(path="{orderId}")
+    public ResponseEntity<JsonResponse> deleteOrder(
+            @RequestAttribute(name="user") User user,
+            @PathVariable UUID orderId
+    ) throws NotFoundException, BadRequestException {
+        return ResponseEntity.ok(orderService.deleteOrder(user,orderId));
+    }
 }
