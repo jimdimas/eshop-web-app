@@ -1,6 +1,7 @@
 package com.jimdimas.api.order;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.jimdimas.api.user.User;
@@ -39,6 +40,7 @@ public class Order {
     private UUID orderId;
     @ManyToOne
     @JoinColumn(name="username",referencedColumnName = "username")
+    @JsonIgnoreProperties({"dob"})
     private User user;
     private LocalDateTime orderTime;
     private OrderState orderState;

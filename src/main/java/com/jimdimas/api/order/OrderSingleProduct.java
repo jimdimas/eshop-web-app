@@ -2,12 +2,11 @@ package com.jimdimas.api.order;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.jimdimas.api.product.Product;
+import com.jimdimas.api.product.ProductProjection;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
@@ -41,6 +40,7 @@ public class OrderSingleProduct {
     private Order order;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="product_id",referencedColumnName = "productId")
+    @JsonIgnoreProperties({"reviews","rating"})
     private Product product;
     private Integer quantity;
 }

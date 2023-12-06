@@ -1,6 +1,7 @@
 package com.jimdimas.api.product;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.jimdimas.api.review.Review;
@@ -40,6 +41,7 @@ public class Product {
 
     @ManyToOne
     @JoinColumn(name="user_id",referencedColumnName = "id")
+    @JsonIgnoreProperties({"dob"})
     private User user;
     private String name;
     private String description;

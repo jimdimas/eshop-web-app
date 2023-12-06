@@ -11,7 +11,6 @@ import com.jimdimas.api.util.JsonResponse;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,6 +78,7 @@ public class OrderService {
         return JsonResponse.builder().message("Order has been created , please verify by email to continue.").build();
     }
 
+    @Transactional
     public JsonResponse verifyOrder(String email, UUID orderId, String token) throws NotFoundException, BadRequestException {
         Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
         if (!orderExists.isPresent()){

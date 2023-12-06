@@ -49,6 +49,7 @@ public class User implements UserDetails {
     @JsonIgnore
     private LocalDateTime passwordTokenExpirationDate;
     @Column(unique = true)
+    @JsonIgnore
     private String email;
     @Column(unique = true)
     private String username;
