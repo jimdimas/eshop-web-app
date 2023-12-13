@@ -36,10 +36,10 @@ public class OrderController {
 
     @GetMapping("/verifyOrder")
     public ResponseEntity<JsonResponse> verifyOrder(
-            @RequestParam(name = "email") String email,
+            @RequestParam(name = "user") String username,
             @RequestParam(name="orderId") UUID orderId,
             @RequestParam(name="token") String token) throws NotFoundException, BadRequestException {
-        return ResponseEntity.ok(orderService.verifyOrder(email,orderId,token));
+        return ResponseEntity.ok(orderService.verifyOrder(username,orderId,token));
     }
 
     @GetMapping(path="{orderId}")

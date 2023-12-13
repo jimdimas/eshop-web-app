@@ -125,4 +125,14 @@ public class ProductService {
         productRepository.delete(deletedProduct);
         return JsonResponse.builder().message("Product with id : "+productId.toString()+" deleted successfully.").build();
     }
+
+    public void updateProductQuantity(UUID productId,Integer quantity) throws NotFoundException, BadRequestException {
+        Optional<Product> productExists = productRepository.findProductByPublicId(productId);
+        if (!productExists.isPresent()){
+            throw new NotFoundException("No product with id "+productId.toString()+" exists");
+        }
+        Product product=productExists.get();
+        product.setQuantity(quantity);
+        productRepository.save(product);
+    }
 }

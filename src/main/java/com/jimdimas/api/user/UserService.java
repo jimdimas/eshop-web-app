@@ -73,7 +73,7 @@ public class UserService {
                 .verificationToken(utilService.getSecureRandomToken(32))
                 .role(Role.USER)
                 .build();
-        emailService.sendVerificationMail(savedUser.getEmail(), savedUser.getVerificationToken());
+        emailService.sendVerificationMail(savedUser, savedUser.getVerificationToken());
         userRepository.save(savedUser);
     }
 
@@ -126,7 +126,7 @@ public class UserService {
         User dbUser = userRepository.findUserByUsername(user.getUsername()).get();
         dbUser.setEmail(passwordAndEmail.get("email"));
         dbUser.setVerificationToken(utilService.getSecureRandomToken(32));
-        emailService.sendVerificationMail(dbUser.getEmail(), dbUser.getVerificationToken());
+        emailService.sendVerificationMail(dbUser, dbUser.getVerificationToken());
         userRepository.save(dbUser);
         return "Verify new email to continue";
     }

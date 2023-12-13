@@ -33,9 +33,9 @@ public class AuthenticationController {
 
     @GetMapping("/verifyEmail")
     public ResponseEntity<JsonResponse> verifyEmail(
-            @RequestParam(name = "email") String email,
+            @RequestParam(name = "user") String username,
             @RequestParam(name="verificationToken") String token) throws BadRequestException {
-        return ResponseEntity.ok(authenticationService.verifyEmail(email,token));
+        return ResponseEntity.ok(authenticationService.verifyEmail(username,token));
     }
 
     @PostMapping("/forgotPassword")

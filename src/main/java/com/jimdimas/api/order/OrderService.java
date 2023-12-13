@@ -7,6 +7,7 @@ import com.jimdimas.api.product.Product;
 import com.jimdimas.api.product.ProductService;
 import com.jimdimas.api.user.Role;
 import com.jimdimas.api.user.User;
+import com.jimdimas.api.user.UserService;
 import com.jimdimas.api.util.JsonResponse;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
@@ -56,7 +57,8 @@ public class OrderService {
             if (!productExists.isPresent()){
                 throw new NotFoundException("A given product does not exist");
             }
-            if (requestSingleProduct.getQuantity()<1 || requestSingleProduct.getQuantity()>10){
+            Product actualProduct = productExists.get();
+            if (requestSingleProduct.getQuantity()<1 || requestSingleProduct.getQuantity()>actualProduct.getQuantity()){
                 throw new BadRequestException("Invalid count of a single product provided");
             }
             OrderSingleProduct finalProduct = OrderSingleProduct.builder()
@@ -73,20 +75,24 @@ public class OrderService {
         orderRepository.save(order);
         orderSingleProductRepository.saveAll(finalOrderProducts);
         if (orderRepository.findByPublicId(order.getOrderId()).isPresent()){    //check if order was created to send email,otherwise transaction failed
-            emailService.sendOrderVerificationMail(user.getEmail(), order);
+            emailService.sendOrderVerificationMail(user, order);
         }
         return JsonResponse.builder().message("Order has been created , please verify by email to continue.").build();
     }
 
     @Transactional
-    public JsonResponse verifyOrder(String email, UUID orderId, String token) throws NotFoundException, BadRequestException {
+    public JsonResponse verifyOrder(String username, UUID orderId, String token) throws NotFoundException, BadRequestException {
         Optional<Order> orderExists = orderRepository.findByPublicId(orderId);
         if (!orderExists.isPresent()){
             throw new NotFoundException("Order verification failed");
         }
         Order order = orderExists.get();
-        if (!order.getUser().getEmail().equals(email) || !order.getVerificationToken().equals(token)){
+        if (!order.getUser().getUsername().equals(username) || !order.getVerificationToken().equals(token)){
             throw new BadRequestException("Order verification failed");
+        }
+        for (OrderSingleProduct orderSingleProduct:order.getCartProducts()){
+            Product actualProduct = orderSingleProduct.getProduct();
+            productService.updateProductQuantity(actualProduct.getProductId(),actualProduct.getQuantity()-orderSingleProduct.getQuantity());
         }
         order.setOrderState(OrderState.VERIFIED);
         order.setVerificationToken("");
@@ -146,7 +152,7 @@ public class OrderService {
         updatedOrder.setVerificationToken(utilService.getSecureRandomToken(32));
         updatedOrder.setOrderState(OrderState.PENDING);
         orderRepository.save(updatedOrder);
-        emailService.sendOrderUpdateVerificationMail(user.getEmail(),updatedOrder);
+        emailService.sendOrderUpdateVerificationMail(user,updatedOrder);
         return JsonResponse.builder().message("Order with id : "+orderId.toString()+" has been updated successfully,please check your email for verification.").build();
     }
 

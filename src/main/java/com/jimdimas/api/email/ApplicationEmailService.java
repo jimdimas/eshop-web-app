@@ -3,6 +3,7 @@ package com.jimdimas.api.email;
 import com.jimdimas.api.order.Order;
 import com.jimdimas.api.order.OrderSingleProduct;
 import com.jimdimas.api.product.Product;
+import com.jimdimas.api.user.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -32,22 +33,22 @@ public class ApplicationEmailService {
         javaMailSender.send(mimeMessage);
     }
 
-    public void sendVerificationMail(String recipient,String verificationToken) throws MessagingException {
-        String verificationLink="http://"+this.host+"/api/v1/auth/verifyEmail?email="+recipient+"&verificationToken="+verificationToken;
+    public void sendVerificationMail(User recipient, String verificationToken) throws MessagingException {
+        String verificationLink="http://"+this.host+"/api/v1/auth/verifyEmail?user="+recipient.getUsername()+"&verificationToken="+verificationToken;
         String content = "<p>Hello,this mail was sent by the E-Shop.</p><br>" +
                 "<p>Click <a href=\""+verificationLink+"\">here</a> to verify your email.</p>";
-        sendEmail(recipient,"E-Shop Email Verification",content);
+        sendEmail(recipient.getEmail(),"E-Shop Email Verification",content);
     }
 
-    public void sendChangePasswordMail(String recipient, String passwordToken) throws MessagingException {
-        String changePasswordLink="http://"+this.host+"/api/v1/auth/changePassword?email="+recipient+"&passwordToken="+passwordToken;
+    public void sendChangePasswordMail(User recipient, String passwordToken) throws MessagingException {
+        String changePasswordLink="http://"+this.host+"/api/v1/auth/changePassword?user="+recipient.getUsername()+"&passwordToken="+passwordToken;
         String content = "<p>Hello,this mail was sent by the E-Shop.</p><br>" +
                 "<p>Click <a href=\""+changePasswordLink+"\">here</a> to reset your password.</p>";
-        sendEmail(recipient,"E-Shop Password Reset",content);
+        sendEmail(recipient.getEmail(),"E-Shop Password Reset",content);
     }
 
-    public void sendOrderVerificationMail(String recipient, Order order) throws MessagingException {
-        String verifyOrderLink="http://"+this.host+"/api/v1/order/verifyOrder?orderId="+order.getOrderId().toString()+"&email="+recipient+"&token="+order.getVerificationToken();
+    public void sendOrderVerificationMail(User recipient, Order order) throws MessagingException {
+        String verifyOrderLink="http://"+this.host+"/api/v1/order/verifyOrder?orderId="+order.getOrderId().toString()+"&user="+recipient.getUsername()+"&token="+order.getVerificationToken();
         StringBuilder orderContents= new StringBuilder();
         orderContents.append("<h3>Here is your cart: </h3><br>");
         for (OrderSingleProduct cartProduct:order.getCartProducts()){
@@ -58,11 +59,11 @@ public class ApplicationEmailService {
         String content = "<p>Hello,this mail was sent by the E-Shop regarding order with id: "+order.getOrderId().toString()+".</p><br>"+
                 orderContents.toString()+
                 "<p>Click <a href=\""+verifyOrderLink+"\">here</a> to verify your order.</p>";
-        sendEmail(recipient,"E-Shop Order Verification",content);
+        sendEmail(recipient.getEmail(),"E-Shop Order Verification",content);
     }
 
-    public void sendOrderUpdateVerificationMail(String recipient, Order updatedOrder) throws MessagingException {
-        String verifyOrderLink="http://"+this.host+"/api/v1/order/verifyOrder?orderId="+updatedOrder.getOrderId().toString()+"&email="+recipient+"&token="+updatedOrder.getVerificationToken();
+    public void sendOrderUpdateVerificationMail(User recipient, Order updatedOrder) throws MessagingException {
+        String verifyOrderLink="http://"+this.host+"/api/v1/order/verifyOrder?orderId="+updatedOrder.getOrderId().toString()+"&user="+recipient.getUsername()+"&token="+updatedOrder.getVerificationToken();
         StringBuilder orderContents= new StringBuilder();
         orderContents.append("<h3>Here is your new cart: </h3><br>");
         for (OrderSingleProduct cartProduct:updatedOrder.getCartProducts()){
@@ -73,6 +74,6 @@ public class ApplicationEmailService {
         String content = "<p>Hello,this mail was sent by the E-Shop regarding the update of your order with id: "+updatedOrder.getOrderId().toString()+".</p><br>"+
                 orderContents.toString()+
                 "<p>Click <a href=\""+verifyOrderLink+"\">here</a> to verify your updates.</p>";
-        sendEmail(recipient,"E-Shop Order Update Verification",content);
+        sendEmail(recipient.getEmail(),"E-Shop Order Update Verification",content);
     }
 }

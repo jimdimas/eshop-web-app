@@ -55,21 +55,26 @@ public class AuthenticationService {
                 .dob(user.getDob())
                 .role(Role.USER)
                 .build();
-        emailService.sendVerificationMail(endUser.getEmail(), endUser.getVerificationToken());
+        emailService.sendVerificationMail(endUser, endUser.getVerificationToken());
         userRepository.save(endUser);
         return JsonResponse.builder().message("Verify email to end register process").build();
     }
 
     public JsonResponse login(User user, HttpServletResponse response) throws UnauthorizedException {
-        Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
+        Optional<User> userExists = userRepository.findUserByEmail(user.getEmail());
+        if (!userExists.isPresent()){
+            throw new UnauthorizedException("Invalid credentials provided");
+        }
         User checkUserEnabled = userExists.get();
         if (!checkUserEnabled.isEnabled()){ //If user has not verified his email , he is denied access
             throw new UnauthorizedException("Verify email to login.");
         }
 
+        User actualUser = userExists.get();
+        String username = actualUser.getUsername();
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        user.getUsername(),
+                        username,
                         user.getPassword()
                 )
         );
@@ -84,8 +89,8 @@ public class AuthenticationService {
         return JsonResponse.builder().message("Successful login").build();
     }
 
-    public JsonResponse verifyEmail(String email, String token) throws BadRequestException {
-        Optional<User> userExists = userRepository.findUserByEmail(email);
+    public JsonResponse verifyEmail(String username, String token) throws BadRequestException {
+        Optional<User> userExists = userRepository.findUserByUsername(username);
         if (!userExists.isPresent()){
             throw new BadRequestException("Failed email verification");
         }
@@ -109,7 +114,7 @@ public class AuthenticationService {
         }
         existingUser.setPasswordToken(utilService.getSecureRandomToken(64));
         existingUser.setPasswordTokenExpirationDate(LocalDateTime.now().plusHours(1));
-        emailService.sendChangePasswordMail(existingUser.getEmail(),existingUser.getPasswordToken());
+        emailService.sendChangePasswordMail(existingUser,existingUser.getPasswordToken());
         userRepository.save(existingUser);
         return JsonResponse.builder().message("Check your email to change the password").build();
     }

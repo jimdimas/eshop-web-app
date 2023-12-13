@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.jimdimas.api.exception.BadRequestException;
 import com.jimdimas.api.review.Review;
 import com.jimdimas.api.user.User;
 import jakarta.persistence.*;
@@ -49,6 +50,7 @@ public class Product {
     private Integer price;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)   //creation date is set by the server
     private LocalDate creationDate;
+    @Setter(AccessLevel.NONE)
     private Integer quantity;
     @OneToMany(mappedBy = "product")
     @JsonManagedReference
@@ -62,5 +64,12 @@ public class Product {
             sum+=review.getRating();
         }
         return sum/ reviews.size();
+    }
+
+    public void setQuantity(Integer quantity) throws BadRequestException {
+        if (quantity<0){
+            throw new BadRequestException("Invalid quantity given for product with id : "+this.getProductId().toString());
+        }
+        this.quantity=quantity;
     }
 }
