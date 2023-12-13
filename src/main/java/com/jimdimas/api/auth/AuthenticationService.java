@@ -13,16 +13,16 @@ import com.jimdimas.api.util.JsonResponse;
 import com.jimdimas.api.util.UtilService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Optional;
 @Service
 @RequiredArgsConstructor
@@ -120,7 +120,7 @@ public class AuthenticationService {
     }
 
     public JsonResponse resetPassword(User user) throws BadRequestException {
-        Optional<User> userExists = userRepository.findUserByEmail(user.getEmail());
+        Optional<User> userExists = userRepository.findUserByUsername(user.getUsername());
         if (!userExists.isPresent()){
             throw new BadRequestException("Reset password process failed");
         }
@@ -135,5 +135,23 @@ public class AuthenticationService {
         userRepository.save(existingUser);
 
         return JsonResponse.builder().message("Password reset was successful").build();
+    }
+
+    public JsonResponse logout(User user, HttpServletRequest request, HttpServletResponse response) throws UnauthorizedException {
+        Optional<Cookie> refreshCookieExists = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("refreshToken")).findFirst();
+        if (!refreshCookieExists.isPresent()){
+            throw new UnauthorizedException("Unauthorized to access this route");
+        }
+        Cookie oldRefreshCookie = refreshCookieExists.get();
+        Cookie accessCookie = new Cookie("accessToken",null);
+        Cookie refreshCookie = new Cookie("refreshToken",null);
+        accessCookie.setMaxAge(0);
+        refreshCookie.setMaxAge(0);
+        accessCookie.setPath("/");
+        refreshCookie.setPath("/");
+        response.addCookie(accessCookie);
+        response.addCookie(refreshCookie);
+        tokenService.deleteToken(user,oldRefreshCookie.getValue());
+        return JsonResponse.builder().message("Logout successful").build();
     }
 }

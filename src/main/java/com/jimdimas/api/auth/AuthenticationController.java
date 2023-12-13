@@ -6,6 +6,7 @@ import com.jimdimas.api.exception.UnauthorizedException;
 import com.jimdimas.api.user.User;
 import com.jimdimas.api.util.JsonResponse;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
@@ -46,5 +47,13 @@ public class AuthenticationController {
     @PostMapping("/resetPassword")
     public ResponseEntity<JsonResponse> resetPassword(@RequestBody User user) throws BadRequestException {    //serialize User's password,password token and email fields
         return ResponseEntity.ok(authenticationService.resetPassword(user));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<JsonResponse> logout(
+            @RequestAttribute(name = "user") User user,
+            HttpServletRequest request,
+            HttpServletResponse response) throws UnauthorizedException {
+        return ResponseEntity.ok(authenticationService.logout(user,request,response));
     }
 }

@@ -56,4 +56,21 @@ public class TokenService {
 
         return token.getUser();
     }
+
+    public void deleteToken(User user,String refreshToken) throws UnauthorizedException {
+        if (!jwtService.verifyToken(refreshToken)){
+            throw new UnauthorizedException("Unauthorized to access this route");
+        }
+
+        Optional<Token> tokenExists = tokenRepository.findByUsername(user.getUsername());
+        if (!tokenExists.isPresent()){
+            throw new UnauthorizedException("Unauthorized to access this route");
+        }
+
+        Token token = tokenExists.get();
+        if (!BCrypt.checkpw(refreshToken,token.getRefreshToken())){
+            throw new UnauthorizedException("Unauthorized to access this route");
+        }
+        tokenRepository.delete(token);
+    }
 }
