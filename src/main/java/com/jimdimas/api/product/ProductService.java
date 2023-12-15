@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,25 +29,38 @@ public class ProductService {
         if (searchKeys.get("category")!=null){
             String providedCategory=searchKeys.get("category");
             Category actualCategory=convertStringToCategory(providedCategory);
-            products=productRepository.findProductProjectionByCategory(actualCategory);
+            products=productRepository.findProjectionByCategory(actualCategory);
+        }
+        else if (searchKeys.get("username")!=null){
+            Optional<User> userExists = userService.getUserByUsername(searchKeys.get("username"));
+            if (!userExists.isPresent()){
+                throw new BadRequestException("No products found because given user doesn't exist");
+            }
+            products = productRepository.findProjectionByUsername(searchKeys.get("username"));
         }
         else {
-            products = productRepository.findAllProjectedBy();
+            products=productRepository.findAllProjectedBy();
+        }
+        if (searchKeys.get("sortBy")!=null){
+            String sortBy = searchKeys.get("sortBy");
+            if (sortBy.equals("price")){
+                return products.stream().sorted(Comparator.comparing(ProductProjection::getPrice)).collect(Collectors.toList());
+            }
+            if (sortBy.equals("creationDate")){
+                return products.stream().sorted(Comparator.comparing(ProductProjection::getCreationDate)).collect(Collectors.toList());
+            }
+            throw new BadRequestException("Invalid field for sorting provided");
         }
         return products;
     }
 
     @PostMapping
     public JsonResponse addProduct(User user, Product product, String providedCategory) throws NotFoundException, BadRequestException, UnauthorizedException {
-        Optional<User> uploadUser = userService.getUserByUsername(user, user.getUsername());
-        if (!uploadUser.isPresent()){
-            throw new NotFoundException("No user with username: "+user.getUsername()+" exists.");
-        }
         Category actualCategory=convertStringToCategory(providedCategory);
         checkProductFields(product);
         Product endProduct = Product.builder()  //not setting category enum yet because it can't be serialized by json
                 .productId(UUID.randomUUID())
-                .user(uploadUser.get())
+                .user(user)
                 .name(product.getName())
                 .price(product.getPrice())
                 .quantity(product.getQuantity())
@@ -59,15 +73,10 @@ public class ProductService {
         return JsonResponse.builder().message("Product created successfully.").build();
     }
 
-    public Optional<Product> getProductById(UUID productId) {  return productRepository.findProductByPublicId(productId); }
-
-
-    public Optional<List<ProductProjection>> getUserProducts(String username) {
-        return productRepository.findProductsProjectionByUserUsername(username);
-    }
+    public Optional<Product> getProductById(UUID productId) {  return productRepository.findByPublicId(productId); }
 
     public JsonResponse updateProduct(User user, UUID productId, Product product) throws BadRequestException, ConflictException, NotFoundException {
-        Optional<Product> productExists = productRepository.findProductByPublicId(productId);
+        Optional<Product> productExists = productRepository.findByPublicId(productId);
         if (!productExists.isPresent()){
             throw new NotFoundException("No product with given id exists");
         }
@@ -96,7 +105,7 @@ public class ProductService {
     }
 
     public JsonResponse deleteProduct(User user, UUID productId) throws NotFoundException, ConflictException {
-        Optional<Product> productExists = productRepository.findProductByPublicId(productId);
+        Optional<Product> productExists = productRepository.findByPublicId(productId);
         if (!productExists.isPresent()){
             throw new NotFoundException("No product with given id exists");
         }
@@ -110,7 +119,7 @@ public class ProductService {
     }
 
     public void updateProductQuantity(UUID productId,Integer quantity) throws NotFoundException, BadRequestException {
-        Optional<Product> productExists = productRepository.findProductByPublicId(productId);
+        Optional<Product> productExists = productRepository.findByPublicId(productId);
         if (!productExists.isPresent()){
             throw new NotFoundException("No product with id "+productId.toString()+" exists");
         }

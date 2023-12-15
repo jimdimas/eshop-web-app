@@ -23,13 +23,17 @@ public class ProductController {
     @GetMapping()
     public Optional<List<ProductProjection>> getAllProducts(
             @RequestParam(name="user",required = false) Optional<String> username,
-            @RequestParam(name="category",required=false) Optional<String> category) throws BadRequestException {
+            @RequestParam(name="category",required=false) Optional<String> category,
+            @RequestParam(name="sortBy",required = false) Optional<String> sortBy) throws BadRequestException {
         Dictionary<String,String> searchKeys = new Hashtable<>();
         if (category.isPresent()){
             searchKeys.put("category",category.get());
         }
+        if (sortBy.isPresent()){
+            searchKeys.put("sortBy",sortBy.get());
+        }
         if (username.isPresent()){
-            return productService.getUserProducts(username.get());
+            searchKeys.put("username",username.get());
         }
         return Optional.ofNullable(productService.getAllProducts(searchKeys));
     }

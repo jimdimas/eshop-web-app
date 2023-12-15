@@ -41,14 +41,7 @@ public class UserService {
     }
 
     @GetMapping
-    public Optional<User> getUserByUsername(User requestingUser,String username) throws UnauthorizedException {
-        if (!requestingUser.getUsername().equals(username) && //a user can only view his profile
-                !requestingUser.getRole().equals(Role.ADMIN)){
-            throw new UnauthorizedException("Access not allowed");
-        }
-
-        return userRepository.findUserByUsername(username); }
-
+    public Optional<User> getUserByUsername(String username){   return userRepository.findUserByUsername(username); }
 
     @PostMapping
     public void addUser(User existingUser,User user) throws MessagingException, UnauthorizedException, ConflictException {    //only admins can post users here,regular users need to use auth service
@@ -101,16 +94,6 @@ public class UserService {
         }
 
         userRepository.save(existingUser);
-    }
-
-    public void changePassword(User user, Map<String, String> passwordSet) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                user.getUsername(),
-                passwordSet.get("oldPassword")
-        ));
-        User dbUser = userRepository.findUserByUsername(user.getUsername()).get();
-        dbUser.setPassword(passwordEncoder.encode(passwordSet.get("newPassword")));
-        userRepository.save(dbUser);
     }
 
     public String changeEmail(User user, Map<String, String> passwordAndEmail) throws MessagingException, ConflictException {

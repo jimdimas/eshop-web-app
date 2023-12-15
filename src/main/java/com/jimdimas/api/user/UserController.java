@@ -25,10 +25,8 @@ public class UserController {
     }
 
     @GetMapping(path="{username}")
-    public Optional<User> getUserById(
-            @RequestAttribute(name = "user") User requestingUser,
-             @PathVariable String username ) throws UnauthorizedException {
-        return userService.getUserByUsername(requestingUser,username); }
+    public Optional<User> getUserById(@PathVariable(name="user") String username){
+        return userService.getUserByUsername(username); }
 
     @PostMapping
     public void addUser(
@@ -43,13 +41,6 @@ public class UserController {
             @RequestParam(name="username") String username,
             @RequestBody User updatedUser ) throws UnauthorizedException, NotFoundException {
         userService.updateUser(requestingUser,username,updatedUser); }
-
-    @PutMapping("/changePassword")
-    public void changePassword(
-            @RequestAttribute(name="user") User user,
-            @RequestBody Map<String,String> passwordSet){
-        userService.changePassword(user,passwordSet);
-    }
 
     @PutMapping("/changeEmail")
     public ResponseEntity<String> changeEmail(
