@@ -21,4 +21,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     @Query(value="SELECT p FROM Product p where p.user.username=?1")
     Optional<List<ProductProjection>> findProductsProjectionByUserUsername(String username);
+
+    @Query(value = "SELECT p FROM Product  p where p.category=?1")
+    List<ProductProjection> findProductProjectionByCategory(Category category);
 }

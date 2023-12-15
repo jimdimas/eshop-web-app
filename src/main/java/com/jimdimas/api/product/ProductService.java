@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +23,17 @@ public class ProductService {
     private final UserService userService;
 
     @GetMapping
-    public List<ProductProjection> getAllProducts(){
-        return productRepository.findAllProjectedBy();
+    public List<ProductProjection> getAllProducts(Dictionary<String,String> searchKeys) throws BadRequestException {
+        List<ProductProjection> products;
+        if (searchKeys.get("category")!=null){
+            String providedCategory=searchKeys.get("category");
+            Category actualCategory=convertStringToCategory(providedCategory);
+            products=productRepository.findProductProjectionByCategory(actualCategory);
+        }
+        else {
+            products = productRepository.findAllProjectedBy();
+        }
+        return products;
     }
 
     @PostMapping
@@ -35,16 +42,7 @@ public class ProductService {
         if (!uploadUser.isPresent()){
             throw new NotFoundException("No user with username: "+user.getUsername()+" exists.");
         }
-        Category actualCategory=null;
-        for (Category field:Category.values()){
-            if (field.name().equals(providedCategory)){
-                actualCategory=field;
-                break;
-            }
-        }
-        if (actualCategory==null){
-            throw new BadRequestException("Invalid product category provided");
-        }
+        Category actualCategory=convertStringToCategory(providedCategory);
         checkProductFields(product);
         Product endProduct = Product.builder()  //not setting category enum yet because it can't be serialized by json
                 .productId(UUID.randomUUID())
@@ -66,21 +64,6 @@ public class ProductService {
 
     public Optional<List<ProductProjection>> getUserProducts(String username) {
         return productRepository.findProductsProjectionByUserUsername(username);
-    }
-
-    private void checkProductFields(Product product) throws BadRequestException {
-        if (product.getPrice()<=0 || product.getPrice()>1000){
-            throw new BadRequestException("Invalid product price");
-        }
-        if (product.getName()==null || product.getName().isBlank() || product.getName().length()<2){
-            throw new BadRequestException("Invalid product name");
-        }
-        if (product.getQuantity()<0 || product.getQuantity()>1000){
-            throw new BadRequestException("Invalid product capacity");
-        }
-        if (product.getDescription().length()>100){
-            throw new BadRequestException("Product description can't be more than 100 characters");
-        }
     }
 
     public JsonResponse updateProduct(User user, UUID productId, Product product) throws BadRequestException, ConflictException, NotFoundException {
@@ -134,5 +117,29 @@ public class ProductService {
         Product product=productExists.get();
         product.setQuantity(quantity);
         productRepository.save(product);
+    }
+
+    private void checkProductFields(Product product) throws BadRequestException {
+        if (product.getPrice()<=0 || product.getPrice()>1000){
+            throw new BadRequestException("Invalid product price");
+        }
+        if (product.getName()==null || product.getName().isBlank() || product.getName().length()<2){
+            throw new BadRequestException("Invalid product name");
+        }
+        if (product.getQuantity()<0 || product.getQuantity()>1000){
+            throw new BadRequestException("Invalid product capacity");
+        }
+        if (product.getDescription().length()>100){
+            throw new BadRequestException("Product description can't be more than 100 characters");
+        }
+    }
+
+    private Category convertStringToCategory(String providedCategory) throws BadRequestException {
+        for (Category field:Category.values()){
+            if (field.name().equals(providedCategory)){
+                return field;
+            }
+        }
+        throw new BadRequestException("Invalid category provided");
     }
 }

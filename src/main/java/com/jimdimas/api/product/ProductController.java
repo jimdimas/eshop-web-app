@@ -11,9 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,11 +21,17 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping()
-    public Optional<List<ProductProjection>> getAllProducts(@RequestParam(name="user",required = false) Optional<String> username){
+    public Optional<List<ProductProjection>> getAllProducts(
+            @RequestParam(name="user",required = false) Optional<String> username,
+            @RequestParam(name="category",required=false) Optional<String> category) throws BadRequestException {
+        Dictionary<String,String> searchKeys = new Hashtable<>();
+        if (category.isPresent()){
+            searchKeys.put("category",category.get());
+        }
         if (username.isPresent()){
             return productService.getUserProducts(username.get());
         }
-        return Optional.ofNullable(productService.getAllProducts());
+        return Optional.ofNullable(productService.getAllProducts(searchKeys));
     }
 
     @GetMapping(path="{productId}")
